@@ -20,6 +20,12 @@ export class FamilyBranch {
   @Column({ type: 'text', nullable: true })
   description: string;
 
+  @Column({ nullable: true })
+  branchOrder: number;
+
+  @Column({ default: false })
+  isTrưởng: boolean;
+
   @ManyToOne(() => Member, { nullable: true })
   rootMember: Member;
 

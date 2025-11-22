@@ -25,15 +25,35 @@ export class PageOptionsDto {
 
   @ApiPropertyOptional({
     minimum: 1,
-    maximum: 50,
+    maximum: 1000,
     default: 10,
   })
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(50)
+  @Max(1000)
   @IsOptional()
   readonly take?: number = 10;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => String)
+  readonly q?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => String)
+  readonly branchId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => String)
+  readonly gender?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Boolean)
+  readonly isAlive?: boolean;
 
   get skip(): number {
     return (this.page - 1) * this.take;

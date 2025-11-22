@@ -40,14 +40,13 @@ export class AuthService {
     const salt = await bcrypt.genSalt();
     const passwordHash = await bcrypt.hash(registerDto.password, salt);
 
-    const newUser = await this.userService.create({
+    const user = await this.userService.createUser({
       email: registerDto.email,
       passwordHash,
       displayName: registerDto.displayName,
-      // memberId logic to be added if needed
+      role: registerDto.role, // Use role from DTO
     });
 
-    const { passwordHash: _, ...result } = newUser;
-    return result;
+    return this.login(user);
   }
 }

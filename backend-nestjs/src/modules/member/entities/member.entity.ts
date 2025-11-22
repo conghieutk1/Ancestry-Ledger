@@ -94,14 +94,11 @@ export class Member {
   @JoinColumn()
   user?: User;
 
-  @ManyToOne(() => Member, (member) => member.children, { nullable: true })
+  @ManyToOne(() => Member, { nullable: true })
   father: Member;
 
-  @ManyToOne(() => Member, (member) => member.children, { nullable: true })
+  @ManyToOne(() => Member, { nullable: true })
   mother: Member;
-
-  @OneToMany(() => Member, (member) => member.father)
-  children: Member[];
 
   // This is a simplification. Spouses are handled via Marriage entity.
   @OneToMany(() => Marriage, (marriage) => marriage.partner1)

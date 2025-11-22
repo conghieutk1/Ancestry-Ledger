@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import {
   Member,
   Gender,
@@ -28,24 +28,33 @@ export class SeedService {
     private branchRepository: Repository<FamilyBranch>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    private dataSource: DataSource,
   ) {}
 
   async seed() {
     this.logger.log('Starting seeding...');
 
-    // Clear existing data (optional, be careful in prod)
-    // Clear existing data (optional, be careful in prod)
     await this.clearData();
 
     // 1. Create Family Branches
     const branches = await this.createBranches();
     this.logger.log(`Created ${branches.length} branches`);
 
-    // 2. Create Root Ancestors (Generation 1)
-    const roots = await this.createGeneration(1, [], branches);
-    this.logger.log(`Created ${roots.length} root members`);
+    // 2. Create Root Ancestor (Gen 1)
+    const root = await this.createRootAncestor();
+    this.logger.log(`Created Root Ancestor: ${root.fullName}`);
 
-    // 3. Create Users
+    // 3. Create 4 Sons (Gen 2) - Heads of 4 Branches
+    const branchHeads = await this.createBranchHeads(root, branches);
+    this.logger.log(`Created ${branchHeads.length} branch heads`);
+
+    // 4. Expand each branch to ~100 members
+    for (let i = 0; i < branchHeads.length; i++) {
+      await this.expandBranch(branchHeads[i], branches[i], 100);
+      this.logger.log(`Expanded Branch ${branches[i].name}`);
+    }
+
+    // 5. Create Users
     await this.createUsers();
     this.logger.log('Created users');
 
@@ -61,163 +70,216 @@ export class SeedService {
     this.logger.log(`- Users: ${userCount}`);
   }
 
+  private async clearData() {
+    this.logger.log('Clearing data...');
+    try {
+      // Use TRUNCATE with CASCADE to clear everything cleanly
+      await this.dataSource.query(
+        'TRUNCATE TABLE "users", "marriages", "members", "family_branches" RESTART IDENTITY CASCADE',
+      );
+    } catch (error) {
+      this.logger.error('Error clearing data, falling back to delete', error);
+      await this.userRepository.delete({});
+      await this.marriageRepository.delete({});
+      await this.memberRepository.delete({});
+      await this.branchRepository.delete({});
+    }
+    this.logger.log('Data cleared.');
+  }
+
   private async createBranches(): Promise<FamilyBranch[]> {
-    const branchNames = ['Chi 1 (Trưởng)', 'Chi 2', 'Chi 3', 'Chi 4', 'Chi 5'];
+    const branchConfigs = [
+      { name: 'Chi 1 (Trưởng)', order: 1, isTrưởng: true },
+      { name: 'Chi 2', order: 2, isTrưởng: false },
+      { name: 'Chi 3', order: 3, isTrưởng: false },
+      { name: 'Chi 4', order: 4, isTrưởng: false },
+    ];
+
     const branches = [];
-    for (const name of branchNames) {
+    for (const config of branchConfigs) {
       const branch = this.branchRepository.create({
-        name,
-        description: `Family branch: ${name}`,
+        name: config.name,
+        description: `Dòng họ Đặng Hữu - ${config.name}`,
+        branchOrder: config.order,
+        isTrưởng: config.isTrưởng,
       });
       branches.push(await this.branchRepository.save(branch));
     }
     return branches;
   }
 
-  private async createGeneration(
-    generationIndex: number,
-    parents: Member[],
-    branches: FamilyBranch[],
-  ): Promise<Member[]> {
-    if (generationIndex > 6) return [];
+  private async createRootAncestor(): Promise<Member> {
+    // Gen 1: Born ~1900
+    const yearOfBirth = 1900;
+    const dateOfBirth = new Date(yearOfBirth, 0, 1);
+    const dateOfDeath = new Date(yearOfBirth + 70, 0, 1); // Died at 70
 
-    const members: Member[] = [];
-    const maxChildren = 6;
-    const minChildren = 3;
+    const firstName = 'Tổ';
+    const lastName = 'Đặng';
 
-    // If generation 1 (roots), create 1-3 roots
-    if (generationIndex === 1) {
-      const numRoots = this.randomInt(3, 5);
-      for (let i = 0; i < numRoots; i++) {
-        const root = await this.createMember(
-          generationIndex,
-          null,
-          null,
-          branches[i % branches.length],
-        );
-        members.push(root);
-
-        // Spouse for root
-        const spouse = await this.createMember(
-          generationIndex,
-          null,
-          null,
-          null,
-          true,
-        ); // Spouse usually doesn't belong to the branch by blood, but for simplicity
-        await this.createMarriage(root, spouse);
-
-        // Children
-        const numChildren = this.randomInt(minChildren, maxChildren);
-        const children = [];
-        for (let j = 0; j < numChildren; j++) {
-          // Assign branch to children based on root's branch
-          children.push(
-            await this.createMember(
-              generationIndex + 1,
-              root,
-              spouse,
-              root.branch,
-            ),
-          );
-        }
-
-        // Recurse
-        await this.createGeneration(generationIndex + 1, children, branches);
-      }
-    } else {
-      // For subsequent generations, iterate over parents (who are children of previous gen)
-      for (const parent of parents) {
-        // Decide if this parent gets married
-        const getsMarried = Math.random() > 0.2; // 80% chance
-        if (getsMarried) {
-          const spouse = await this.createMember(
-            generationIndex,
-            null,
-            null,
-            null,
-            true,
-          );
-          await this.createMarriage(parent, spouse);
-
-          const numChildren = this.randomInt(0, 4);
-          const children = [];
-          for (let j = 0; j < numChildren; j++) {
-            children.push(
-              await this.createMember(
-                generationIndex + 1,
-                parent,
-                spouse,
-                parent.branch,
-              ),
-            );
-          }
-
-          if (children.length > 0) {
-            await this.createGeneration(
-              generationIndex + 1,
-              children,
-              branches,
-            );
-          }
-        }
-      }
-    }
-
-    return members;
+    const root = this.memberRepository.create({
+      firstName,
+      middleName: 'Hữu',
+      lastName,
+      fullName: 'Đặng Hữu Tổ',
+      gender: Gender.MALE,
+      dateOfBirth,
+      dateOfDeath,
+      isAlive: false,
+      generationIndex: 1,
+      visibility: Visibility.PUBLIC,
+      slug: this.generateSlug(firstName, lastName, yearOfBirth),
+    });
+    return this.memberRepository.save(root);
   }
 
-  private async createMember(
-    generationIndex: number,
-    father: Member | null,
-    mother: Member | null,
-    branch: FamilyBranch | null,
-    isSpouse = false,
-  ): Promise<Member> {
-    const gender = Math.random() > 0.5 ? Gender.MALE : Gender.FEMALE;
-    const { firstName, middleName, lastName } =
-      this.generateVietnameseName(gender);
+  private async createBranchHeads(
+    root: Member,
+    branches: FamilyBranch[],
+  ): Promise<Member[]> {
+    // Create Spouse for Root
+    const rootSpouse = await this.createSpouse(root, 1900);
+    await this.createMarriage(root, rootSpouse);
 
-    // Date of birth logic
-    let yearOfBirth;
-    if (father) {
-      const fatherYear = father.dateOfBirth
-        ? new Date(father.dateOfBirth).getFullYear()
-        : 1900;
-      yearOfBirth = fatherYear + this.randomInt(20, 35);
-    } else if (generationIndex === 1) {
-      yearOfBirth = 1900 + this.randomInt(0, 10);
-    } else {
-      // Spouse
-      yearOfBirth = 1900 + (generationIndex - 1) * 25 + this.randomInt(-5, 5);
+    const heads = [];
+    // Gen 2: Born ~1925
+    const baseYear = 1925;
+    const headNames = ['Cả', 'Hai', 'Ba', 'Bốn'];
+
+    for (let i = 0; i < branches.length; i++) {
+      const birthYear = baseYear + i * 2; // Stagger births
+      const dateOfBirth = new Date(birthYear, this.randomInt(0, 11), 1);
+      const isAlive = false;
+      const dateOfDeath = new Date(birthYear + this.randomInt(60, 80), 0, 1);
+
+      const firstName = headNames[i] || 'Hùng';
+      const lastName = 'Đặng';
+      const middleName = 'Hữu';
+
+      const head = this.memberRepository.create({
+        firstName,
+        middleName,
+        lastName,
+        fullName: `${lastName} ${middleName} ${firstName}`,
+        gender: Gender.MALE,
+        dateOfBirth,
+        dateOfDeath,
+        isAlive,
+        generationIndex: 2,
+        branch: branches[i],
+        father: root,
+        mother: rootSpouse,
+        visibility: Visibility.PUBLIC,
+        slug: this.generateSlug(firstName, lastName, birthYear),
+      });
+      heads.push(await this.memberRepository.save(head));
     }
+    return heads;
+  }
 
+  private generateSlug(
+    firstName: string,
+    lastName: string,
+    year: number,
+  ): string {
+    // Simple slugify: remove accents, lowercase, remove special chars
+    const str = `${firstName}-${lastName}-${year}-${Math.random().toString(36).substring(7)}`;
+    return str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9-]/g, '-');
+  }
+
+  private async expandBranch(
+    head: Member,
+    branch: FamilyBranch,
+    targetCount: number,
+  ) {
+    const queue: Member[] = [head];
+    let currentCount = 1; // Head is already created
+
+    while (queue.length > 0 && currentCount < targetCount) {
+      const currentMale = queue.shift();
+
+      // Safety check
+      if (!currentMale) continue;
+
+      // Determine if this male gets married (high chance for lineage expansion)
+      // Gen 2 (Head) always married. Others 90% chance.
+      if (currentMale.generationIndex > 2 && Math.random() > 0.9) continue;
+
+      // Create Spouse
+      const spouse = await this.createSpouse(
+        currentMale,
+        currentMale.dateOfBirth.getFullYear(),
+      );
+      await this.createMarriage(currentMale, spouse);
+
+      // Determine number of children
+      // Earlier generations have more children
+      let numChildren = 0;
+      if (currentMale.generationIndex <= 3) {
+        numChildren = this.randomInt(4, 7);
+      } else if (currentMale.generationIndex <= 4) {
+        numChildren = this.randomInt(3, 5);
+      } else {
+        numChildren = this.randomInt(2, 3);
+      }
+
+      // Generate Children
+      for (let i = 0; i < numChildren; i++) {
+        if (currentCount >= targetCount) break;
+
+        const gender = Math.random() > 0.5 ? Gender.MALE : Gender.FEMALE;
+        const child = await this.createChild(
+          currentMale,
+          spouse,
+          branch,
+          gender,
+        );
+        currentCount++;
+
+        // If Male, add to queue to continue lineage
+        if (gender === Gender.MALE) {
+          queue.push(child);
+        }
+      }
+    }
+  }
+
+  private async createSpouse(
+    partner: Member,
+    partnerBirthYear: number,
+  ): Promise<Member> {
+    const gender = partner.gender === Gender.MALE ? Gender.FEMALE : Gender.MALE;
+    const { firstName, middleName, lastName } = this.generateRandomName(gender);
+
+    const birthYear = partnerBirthYear + this.randomInt(-5, 5);
     const dateOfBirth = new Date(
-      yearOfBirth,
+      birthYear,
       this.randomInt(0, 11),
       this.randomInt(1, 28),
     );
 
-    // Is Alive logic
+    // Calculate status based on birth year
     const currentYear = new Date().getFullYear();
     let isAlive = true;
     let dateOfDeath = null;
 
     if (
-      currentYear - yearOfBirth > 90 ||
-      (yearOfBirth < 1940 && Math.random() > 0.1)
+      currentYear - birthYear > 95 ||
+      (birthYear < 1940 && Math.random() > 0.1)
     ) {
       isAlive = false;
-      const ageAtDeath = this.randomInt(60, 95);
-      const deathYear = yearOfBirth + ageAtDeath;
       dateOfDeath = new Date(
-        Math.min(deathYear, currentYear),
+        birthYear + this.randomInt(60, 90),
         this.randomInt(0, 11),
-        this.randomInt(1, 28),
+        1,
       );
     }
 
-    const member = this.memberRepository.create({
+    const spouse = this.memberRepository.create({
       firstName,
       middleName,
       lastName,
@@ -226,15 +288,69 @@ export class SeedService {
       dateOfBirth,
       dateOfDeath,
       isAlive,
-      generationIndex: isSpouse ? generationIndex : generationIndex, // Spouses are same gen
-      branch,
-      father: father || undefined,
-      mother: mother || undefined,
-      visibility: this.randomVisibility(),
-      slug: `${firstName}-${lastName}-${yearOfBirth}-${Math.random().toString(36).substring(7)}`.toLowerCase(),
+      generationIndex: partner.generationIndex, // Same generation
+      visibility: Visibility.PUBLIC,
+      slug: this.generateSlug(firstName, lastName, birthYear),
     });
 
-    return this.memberRepository.save(member);
+    return this.memberRepository.save(spouse);
+  }
+
+  private async createChild(
+    father: Member,
+    mother: Member,
+    branch: FamilyBranch,
+    gender: Gender,
+  ): Promise<Member> {
+    // Lineage name
+    const lastName = 'Đặng';
+    const middleName = gender === Gender.MALE ? 'Hữu' : 'Thị';
+    const firstName = this.getRandomFirstName(gender);
+
+    // Birth year: Father's birth + 20-40 years
+    const fatherBirthYear = father.dateOfBirth.getFullYear();
+    const birthYear = fatherBirthYear + this.randomInt(22, 35);
+    const dateOfBirth = new Date(
+      birthYear,
+      this.randomInt(0, 11),
+      this.randomInt(1, 28),
+    );
+
+    // Status
+    const currentYear = new Date().getFullYear();
+    let isAlive = true;
+    let dateOfDeath = null;
+
+    if (
+      currentYear - birthYear > 90 ||
+      (birthYear < 1940 && Math.random() > 0.2)
+    ) {
+      isAlive = false;
+      dateOfDeath = new Date(
+        birthYear + this.randomInt(50, 85),
+        this.randomInt(0, 11),
+        1,
+      );
+    }
+
+    const child = this.memberRepository.create({
+      firstName,
+      middleName,
+      lastName,
+      fullName: `${lastName} ${middleName} ${firstName}`,
+      gender,
+      dateOfBirth,
+      dateOfDeath,
+      isAlive,
+      generationIndex: father.generationIndex + 1,
+      branch,
+      father,
+      mother,
+      visibility: Visibility.MEMBERS_ONLY,
+      slug: this.generateSlug(firstName, lastName, birthYear),
+    });
+
+    return this.memberRepository.save(child);
   }
 
   private async createMarriage(partner1: Member, partner2: Member) {
@@ -257,7 +373,6 @@ export class SeedService {
   private async createUsers() {
     const salt = await bcrypt.genSalt();
     const adminPasswordHash = await bcrypt.hash('adminadmin', salt);
-    const memberPasswordHash = await bcrypt.hash('12345678', salt);
 
     // Admin
     await this.userRepository.save({
@@ -266,22 +381,9 @@ export class SeedService {
       role: Role.ADMIN,
       displayName: 'Admin User',
     });
-
-    // Member users
-    // Try to link to some existing members
-    const members = await this.memberRepository.find({ take: 5 });
-    for (let i = 0; i < members.length; i++) {
-      await this.userRepository.save({
-        email: `member${i + 1}@example.com`,
-        passwordHash: memberPasswordHash,
-        role: Role.MEMBER,
-        displayName: members[i].fullName,
-        member: members[i],
-      });
-    }
   }
 
-  private generateVietnameseName(gender: Gender) {
+  private generateRandomName(gender: Gender) {
     const lastNames = [
       'Nguyễn',
       'Trần',
@@ -289,53 +391,117 @@ export class SeedService {
       'Phạm',
       'Hoàng',
       'Vũ',
-      'Đặng',
       'Bùi',
       'Đỗ',
       'Hồ',
+      'Ngô',
+      'Dương',
+      'Lý',
     ];
-    const middleNamesMale = ['Văn', 'Hữu', 'Quốc', 'Ngọc', 'Minh', 'Đức'];
-    const middleNamesFemale = ['Thị', 'Ngọc', 'Phương', 'Thanh', 'Thu', 'Hồng'];
-    const firstNamesMale = [
-      'Anh',
-      'Bình',
-      'Cường',
-      'Dũng',
-      'Hải',
-      'Hùng',
-      'Nam',
-      'Phong',
-      'Huy',
-      'Long',
-      'Tùng',
-      'Việt',
-    ];
-    const firstNamesFemale = [
-      'Lan',
-      'Hoa',
-      'Mai',
-      'Hạnh',
-      'Thảo',
-      'Trang',
-      'Ngân',
-      'Vy',
-      'Nhung',
-      'Hương',
-      'Linh',
-      'Thu',
-    ];
+    const middleNamesMale = ['Văn', 'Đức', 'Minh', 'Quốc', 'Thành', 'Công'];
+    const middleNamesFemale = ['Thị', 'Ngọc', 'Thu', 'Hồng', 'Thanh', 'Mỹ'];
 
     const lastName = this.randomItem(lastNames);
     const middleName =
       gender === Gender.MALE
         ? this.randomItem(middleNamesMale)
         : this.randomItem(middleNamesFemale);
-    const firstName =
-      gender === Gender.MALE
-        ? this.randomItem(firstNamesMale)
-        : this.randomItem(firstNamesFemale);
+    const firstName = this.getRandomFirstName(gender);
 
     return { firstName, middleName, lastName };
+  }
+
+  private getRandomFirstName(gender: Gender): string {
+    const maleNames = [
+      'Anh',
+      'Bình',
+      'Cường',
+      'Dũng',
+      'Đức',
+      'Hải',
+      'Hiếu',
+      'Hoàng',
+      'Hùng',
+      'Huy',
+      'Khánh',
+      'Khoa',
+      'Lâm',
+      'Long',
+      'Minh',
+      'Nam',
+      'Nghĩa',
+      'Phong',
+      'Phúc',
+      'Quân',
+      'Quang',
+      'Sơn',
+      'Thắng',
+      'Thành',
+      'Thiên',
+      'Thịnh',
+      'Tiến',
+      'Toàn',
+      'Trọng',
+      'Trung',
+      'Tuấn',
+      'Tùng',
+      'Việt',
+      'Vinh',
+      'Vũ',
+      'Xuân',
+      'Yên',
+    ];
+    const femaleNames = [
+      'An',
+      'Anh',
+      'Bích',
+      'Châu',
+      'Chi',
+      'Diệp',
+      'Dung',
+      'Duyên',
+      'Giang',
+      'Hà',
+      'Hạnh',
+      'Hoa',
+      'Hồng',
+      'Huyền',
+      'Hương',
+      'Khánh',
+      'Lan',
+      'Linh',
+      'Loan',
+      'Ly',
+      'Mai',
+      'Minh',
+      'My',
+      'Ngân',
+      'Ngọc',
+      'Nhung',
+      'Oanh',
+      'Phương',
+      'Quyên',
+      'Quỳnh',
+      'Tâm',
+      'Thảo',
+      'Thi',
+      'Thu',
+      'Thủy',
+      'Thư',
+      'Trang',
+      'Trâm',
+      'Trinh',
+      'Tú',
+      'Uyên',
+      'Vân',
+      'Vi',
+      'Vy',
+      'Xuân',
+      'Yến',
+    ];
+    return gender === Gender.MALE
+      ? this.randomItem(maleNames)
+      : this.randomItem(femaleNames);
   }
 
   private randomItem<T>(arr: T[]): T {
@@ -344,26 +510,5 @@ export class SeedService {
 
   private randomInt(min: number, max: number): number {
     return Math.floor(Math.random() * (max - min + 1)) + min;
-  }
-
-  private randomVisibility(): Visibility {
-    const rand = Math.random();
-    if (rand < 0.7) return Visibility.PUBLIC;
-    if (rand < 0.95) return Visibility.MEMBERS_ONLY;
-    return Visibility.PRIVATE;
-  }
-
-  private async clearData() {
-    this.logger.log('Clearing data...');
-    await this.userRepository.delete({});
-    await this.marriageRepository.delete({});
-    // Members have self-referencing foreign keys (father, mother), so we might need to handle that.
-    // But delete({}) usually works if no other constraints block it.
-    // However, if there are circular dependencies or strict constraints, we might need to set columns to null first.
-    // For now, let's try simple delete. If it fails, we'll improve.
-    // Actually, members have foreign keys to branches too.
-    await this.memberRepository.query('DELETE FROM member'); // Use query to bypass some checks if needed, or just repository.delete
-    await this.branchRepository.delete({});
-    this.logger.log('Data cleared.');
   }
 }

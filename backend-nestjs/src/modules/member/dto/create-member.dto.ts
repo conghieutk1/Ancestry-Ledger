@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
   IsBoolean,
-  IsDateString,
   IsEnum,
   IsNotEmpty,
   IsOptional,
@@ -30,14 +30,72 @@ export class CreateMemberDto {
   gender: Gender;
 
   @ApiPropertyOptional()
-  @IsDateString()
   @IsOptional()
-  dateOfBirth?: Date;
+  @IsString()
+  @Transform(({ value }) => {
+    if (!value || value === '') return null;
+    // Accept date-only format (YYYY-MM-DD) and convert to Date
+    return value;
+  })
+  dateOfBirth?: string;
 
   @ApiPropertyOptional()
   @IsBoolean()
   @IsOptional()
   isAlive?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }) => {
+    if (!value || value === '') return null;
+    return value;
+  })
+  dateOfDeath?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  placeOfBirth?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  placeOfDeath?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  occupation?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  bio?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  notes?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  generationIndex?: number;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  fatherId?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  motherId?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  branchId?: string;
 
   @ApiPropertyOptional({ enum: Visibility })
   @IsEnum(Visibility)

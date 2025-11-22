@@ -23,8 +23,10 @@ export class Marriage {
   @ManyToOne(() => Member, (member) => member.marriagesAsPartner1)
   partner1: Member;
 
-  @ManyToOne(() => Member, (member) => member.marriagesAsPartner2)
-  partner2: Member;
+  @ManyToOne(() => Member, (member) => member.marriagesAsPartner2, {
+    nullable: true,
+  })
+  partner2: Member | null;
 
   @Column({ type: 'date', nullable: true })
   startDate: Date;

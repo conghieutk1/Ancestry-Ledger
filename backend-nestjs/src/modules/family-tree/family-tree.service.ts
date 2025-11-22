@@ -14,7 +14,6 @@ export class FamilyTreeService {
     // Simple heuristic: members with no parents
     return this.memberRepository.find({
       where: { father: null, mother: null },
-      relations: ['children'],
       take: 10, // Limit to avoid huge payload if many roots
     });
   }
@@ -25,7 +24,6 @@ export class FamilyTreeService {
       relations: [
         'father',
         'mother',
-        'children',
         'marriagesAsPartner1',
         'marriagesAsPartner1.partner2',
         'marriagesAsPartner2',
@@ -36,6 +34,11 @@ export class FamilyTreeService {
     if (!member) {
       return null;
     }
+
+    // Manually query children
+    const children = await this.memberRepository.find({
+      where: [{ father: { id: memberId } }, { mother: { id: memberId } }],
+    });
 
     // Construct a graph representation
     // This is a simplified version. Real-world tree traversal is more complex.
@@ -65,7 +68,7 @@ export class FamilyTreeService {
       edges.push({ from: member.mother.id, to: member.id, type: 'parent' });
     }
 
-    member.children?.forEach((child) => {
+    children.forEach((child) => {
       addNode(child);
       edges.push({ from: member.id, to: child.id, type: 'parent' });
     });
