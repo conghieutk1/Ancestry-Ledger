@@ -7,13 +7,15 @@ import { ArrowLeft, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select } from '@/components/ui/select';
+import { CustomSelect } from '@/components/ui/custom-select';
+import { CustomDatePicker } from '@/components/ui/custom-date-picker';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
 import { createMember, getBranches, getMembers } from '@/lib/api';
 import { Gender, Visibility, FamilyBranch, Member } from '@/types';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function NewMemberPage() {
+    const { t } = useLanguage();
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -21,14 +23,22 @@ export default function NewMemberPage() {
     // Data for selects
     const [branches, setBranches] = useState<FamilyBranch[]>([]);
     const [members, setMembers] = useState<Member[]>([]);
+
+    // Form state
+    const [gender, setGender] = useState<Gender>(Gender.MALE);
+    const [dateOfBirth, setDateOfBirth] = useState('');
     const [isAlive, setIsAlive] = useState(true);
+    const [dateOfDeath, setDateOfDeath] = useState('');
+    const [fatherId, setFatherId] = useState('');
+    const [motherId, setMotherId] = useState('');
+    const [branchId, setBranchId] = useState('');
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 const [branchesData, membersData] = await Promise.all([
                     getBranches(),
-                    getMembers({ take: 1000 }), // Fetch all for selection
+                    getMembers({ take: 1000 }),
                 ]);
                 setBranches(branchesData);
                 setMembers(membersData.data);
@@ -46,7 +56,6 @@ export default function NewMemberPage() {
 
         const formData = new FormData(e.currentTarget);
 
-        // Helper to get string or undefined
         const getStr = (key: string) => {
             const val = formData.get(key) as string;
             return val && val.trim() !== '' ? val.trim() : undefined;
@@ -56,16 +65,17 @@ export default function NewMemberPage() {
             firstName: getStr('firstName'),
             middleName: getStr('middleName'),
             lastName: getStr('lastName'),
-            gender: formData.get('gender') as Gender,
-            dateOfBirth: getStr('dateOfBirth'),
+            gender: gender,
+            dateOfBirth: dateOfBirth || undefined,
             placeOfBirth: getStr('placeOfBirth'),
             occupation: getStr('occupation'),
+            avatarUrl: getStr('avatarUrl'),
             isAlive: isAlive,
-            dateOfDeath: isAlive ? undefined : getStr('dateOfDeath'),
+            dateOfDeath: isAlive ? undefined : dateOfDeath || undefined,
             placeOfDeath: isAlive ? undefined : getStr('placeOfDeath'),
-            fatherId: getStr('fatherId'),
-            motherId: getStr('motherId'),
-            branchId: getStr('branchId'),
+            fatherId: fatherId || undefined,
+            motherId: motherId || undefined,
+            branchId: branchId || undefined,
             bio: getStr('bio'),
             notes: getStr('notes'),
             visibility: Visibility.MEMBERS_ONLY,
@@ -95,129 +105,155 @@ export default function NewMemberPage() {
                     </Button>
                     <div>
                         <h1 className="text-2xl font-bold text-slate-900">
-                            Thêm thành viên mới
+                            {t.members.newMember}
                         </h1>
                         <p className="text-sm text-slate-500">
-                            Tạo hồ sơ thành viên mới trong gia phả.
+                            {t.members.newMemberSubtitle}
                         </p>
                     </div>
                 </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-8">
+            <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Personal Information */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Thông tin cá nhân</CardTitle>
+                        <CardTitle>{t.members.personalInfo}</CardTitle>
                     </CardHeader>
-                    <CardContent className="grid gap-6 md:grid-cols-3">
-                        <div className="space-y-2">
-                            <Label htmlFor="lastName">Họ *</Label>
+                    <CardContent className="grid gap-4 md:grid-cols-6">
+                        <div className="md:col-span-2 space-y-3">
+                            <label className="text-sm font-medium text-slate-700">
+                                {t.form.lastName}{' '}
+                                <span className="text-red-500">*</span>
+                            </label>
                             <Input
-                                id="lastName"
                                 name="lastName"
                                 placeholder="Nguyễn"
                                 required
                             />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="middleName">Tên đệm</Label>
-                            <Input
-                                id="middleName"
-                                name="middleName"
-                                placeholder="Văn"
-                            />
+                        <div className="md:col-span-2 space-y-3">
+                            <label className="text-sm font-medium text-slate-700">
+                                {t.form.middleName}
+                            </label>
+                            <Input name="middleName" placeholder="Văn" />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="firstName">Tên *</Label>
-                            <Input
-                                id="firstName"
-                                name="firstName"
-                                placeholder="A"
-                                required
+                        <div className="md:col-span-2 space-y-3">
+                            <label className="text-sm font-medium text-slate-700">
+                                {t.form.firstName}{' '}
+                                <span className="text-red-500">*</span>
+                            </label>
+                            <Input name="firstName" placeholder="A" required />
+                        </div>
+
+                        <div className="md:col-span-2 space-y-3">
+                            <label className="text-sm font-medium text-slate-700">
+                                {t.common.gender}{' '}
+                                <span className="text-red-500">*</span>
+                            </label>
+                            <CustomSelect
+                                value={gender}
+                                onChange={(value) => setGender(value as Gender)}
+                                options={[
+                                    {
+                                        value: Gender.MALE,
+                                        label: t.common.male,
+                                    },
+                                    {
+                                        value: Gender.FEMALE,
+                                        label: t.common.female,
+                                    },
+                                    {
+                                        value: Gender.UNKNOWN,
+                                        label: t.common.unknown,
+                                    },
+                                ]}
+                                placeholder={t.common.gender}
+                                showSearch={false}
                             />
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="gender">Giới tính *</Label>
-                            <Select
-                                name="gender"
-                                defaultValue={Gender.MALE}
-                                required
-                            >
-                                <option value={Gender.MALE}>Nam</option>
-                                <option value={Gender.FEMALE}>Nữ</option>
-                                <option value={Gender.OTHER}>Khác</option>
-                            </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="dateOfBirth">Ngày sinh</Label>
-                            <Input
-                                id="dateOfBirth"
-                                name="dateOfBirth"
-                                type="date"
+                        <div className="md:col-span-2 space-y-3">
+                            <label className="text-sm font-medium text-slate-700">
+                                {t.common.dateOfBirth}{' '}
+                                <span className="text-red-500">*</span>
+                            </label>
+                            <CustomDatePicker
+                                value={dateOfBirth}
+                                onChange={setDateOfBirth}
+                                placeholder={t.common.dateOfBirth}
                             />
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="placeOfBirth">Nơi sinh</Label>
+                        <div className="md:col-span-2 space-y-3">
+                            <label className="text-sm font-medium text-slate-700">
+                                {t.common.placeOfBirth}
+                            </label>
                             <Input
-                                id="placeOfBirth"
                                 name="placeOfBirth"
                                 placeholder="Hà Nội..."
                             />
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="occupation">Nghề nghiệp</Label>
+                        <div className="md:col-span-2 space-y-3">
+                            <label className="text-sm font-medium text-slate-700">
+                                {t.common.occupation}
+                            </label>
+                            <Input name="occupation" placeholder="Kỹ sư..." />
+                        </div>
+
+                        <div className="md:col-span-2 space-y-3">
+                            <label className="text-sm font-medium text-slate-700">
+                                {t.common.avatarUrl}
+                            </label>
                             <Input
-                                id="occupation"
-                                name="occupation"
-                                placeholder="Kỹ sư..."
+                                name="avatarUrl"
+                                placeholder="https://example.com/avatar.jpg"
                             />
                         </div>
-                    </CardContent>
-                </Card>
 
-                {/* Status */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Trạng thái</CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid gap-6 md:grid-cols-2">
-                        <div className="space-y-2">
-                            <Label htmlFor="status">Trạng thái sống *</Label>
-                            <Select
-                                name="status"
+                        <div className="md:col-span-2 space-y-3">
+                            <label className="text-sm font-medium text-slate-700">
+                                {t.common.status}{' '}
+                                <span className="text-red-500">*</span>
+                            </label>
+                            <CustomSelect
                                 value={isAlive ? 'alive' : 'deceased'}
-                                onChange={(e) =>
-                                    setIsAlive(e.target.value === 'alive')
+                                onChange={(value) =>
+                                    setIsAlive(value === 'alive')
                                 }
-                            >
-                                <option value="alive">Còn sống</option>
-                                <option value="deceased">Đã mất</option>
-                            </Select>
+                                options={[
+                                    {
+                                        value: 'alive',
+                                        label: t.common.alive,
+                                    },
+                                    {
+                                        value: 'deceased',
+                                        label: t.common.deceased,
+                                    },
+                                ]}
+                                placeholder={t.common.status}
+                                showSearch={false}
+                            />
                         </div>
 
                         {!isAlive && (
                             <>
-                                <div className="space-y-2">
-                                    <Label htmlFor="dateOfDeath">
-                                        Ngày mất
-                                    </Label>
-                                    <Input
-                                        id="dateOfDeath"
-                                        name="dateOfDeath"
-                                        type="date"
+                                <div className="md:col-span-2 space-y-3">
+                                    <label className="text-sm font-medium text-slate-700">
+                                        {t.common.dateOfDeath}
+                                    </label>
+                                    <CustomDatePicker
+                                        value={dateOfDeath}
+                                        onChange={setDateOfDeath}
+                                        placeholder={t.common.dateOfDeath}
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="placeOfDeath">
-                                        Nơi mất
-                                    </Label>
+                                <div className="md:col-span-2 space-y-3">
+                                    <label className="text-sm font-medium text-slate-700">
+                                        {t.common.placeOfDeath}
+                                    </label>
                                     <Input
-                                        id="placeOfDeath"
                                         name="placeOfDeath"
                                         placeholder="Tại gia..."
                                     />
@@ -227,95 +263,149 @@ export default function NewMemberPage() {
                     </CardContent>
                 </Card>
 
-                {/* Family Connections */}
+                {/* Family Connections & Additional Info */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Quan hệ gia đình</CardTitle>
+                        <CardTitle>{t.members.familyConnections}</CardTitle>
                     </CardHeader>
-                    <CardContent className="grid gap-6 md:grid-cols-2">
-                        <div className="space-y-2">
-                            <Label htmlFor="fatherId">Cha *</Label>
-                            <Select name="fatherId" required>
-                                <option value="">-- Chọn cha --</option>
-                                {members &&
-                                    members.length > 0 &&
-                                    members
-                                        .filter((m) => m.gender === Gender.MALE)
-                                        .map((m) => (
-                                            <option key={m.id} value={m.id}>
-                                                {m.fullName} (
-                                                {m.dateOfBirth
-                                                    ? new Date(
-                                                          m.dateOfBirth
-                                                      ).getFullYear()
-                                                    : '?'}
-                                                )
-                                            </option>
-                                        ))}
-                            </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="motherId">Mẹ *</Label>
-                            <Select name="motherId" required>
-                                <option value="">-- Chọn mẹ --</option>
-                                {members &&
-                                    members.length > 0 &&
-                                    members
-                                        .filter(
-                                            (m) => m.gender === Gender.FEMALE
-                                        )
-                                        .map((m) => (
-                                            <option key={m.id} value={m.id}>
-                                                {m.fullName} (
-                                                {m.dateOfBirth
-                                                    ? new Date(
-                                                          m.dateOfBirth
-                                                      ).getFullYear()
-                                                    : '?'}
-                                                )
-                                            </option>
-                                        ))}
-                            </Select>
-                        </div>
-
-                        <div className="space-y-2 md:col-span-2">
-                            <Label htmlFor="branchId">Thuộc Chi/Nhánh *</Label>
-                            <Select name="branchId" required>
-                                <option value="">-- Chọn chi/nhánh --</option>
-                                {branches &&
-                                    branches.length > 0 &&
-                                    branches.map((b) => (
-                                        <option key={b.id} value={b.id}>
-                                            {b.name}
-                                        </option>
-                                    ))}
-                            </Select>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Additional Info */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Thông tin bổ sung</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="bio">Tiểu sử</Label>
-                            <Textarea
-                                id="bio"
-                                name="bio"
-                                placeholder="Tiểu sử tóm tắt..."
-                                className="min-h-[100px]"
+                    <CardContent className="grid gap-4 md:grid-cols-6">
+                        <div className="md:col-span-3 space-y-3">
+                            <label className="text-sm font-medium text-slate-700">
+                                {t.common.father}
+                            </label>
+                            <CustomSelect
+                                value={fatherId}
+                                onChange={setFatherId}
+                                options={members
+                                    .filter(
+                                        (m) =>
+                                            m.gender === Gender.MALE &&
+                                            (m.marriagesAsPartner1?.some(
+                                                (mar) =>
+                                                    mar.status === 'MARRIED'
+                                            ) ||
+                                                m.marriagesAsPartner2?.some(
+                                                    (mar) =>
+                                                        mar.status === 'MARRIED'
+                                                ))
+                                    )
+                                    .map((m) => ({
+                                        value: m.id,
+                                        label: `${m.fullName} • ${
+                                            m.dateOfBirth
+                                                ? new Date(
+                                                      m.dateOfBirth
+                                                  ).getFullYear()
+                                                : '?'
+                                        }`,
+                                    }))}
+                                placeholder={t.common.selectFather}
+                                searchPlaceholder={t.common.search}
                             />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="notes">Ghi chú</Label>
+
+                        <div className="md:col-span-3 space-y-3">
+                            <label className="text-sm font-medium text-slate-700">
+                                {t.common.mother}
+                            </label>
+                            <CustomSelect
+                                value={motherId}
+                                onChange={setMotherId}
+                                options={members
+                                    .filter(
+                                        (m) =>
+                                            m.gender === Gender.FEMALE &&
+                                            (m.marriagesAsPartner1?.some(
+                                                (mar) =>
+                                                    mar.status === 'MARRIED'
+                                            ) ||
+                                                m.marriagesAsPartner2?.some(
+                                                    (mar) =>
+                                                        mar.status === 'MARRIED'
+                                                ))
+                                    )
+                                    .map((m) => ({
+                                        value: m.id,
+                                        label: `${m.fullName} • ${
+                                            m.dateOfBirth
+                                                ? new Date(
+                                                      m.dateOfBirth
+                                                  ).getFullYear()
+                                                : '?'
+                                        }`,
+                                    }))}
+                                placeholder={t.common.selectMother}
+                                searchPlaceholder={t.common.search}
+                            />
+                        </div>
+
+                        <div className="md:col-span-6 mt-4">
+                            <h3 className="mb-4 text-lg font-medium">
+                                {t.members.additionalInfo}
+                            </h3>
+                        </div>
+
+                        <div className="md:col-span-3 space-y-3">
+                            <label className="text-sm font-medium text-slate-700">
+                                {t.common.branch}
+                            </label>
+                            <CustomSelect
+                                value={branchId}
+                                onChange={setBranchId}
+                                options={branches.map((b) => ({
+                                    value: b.id,
+                                    label: b.name,
+                                }))}
+                                placeholder={t.common.selectBranch}
+                                searchPlaceholder={t.common.search}
+                            />
+                        </div>
+
+                        <div className="md:col-span-3 space-y-3">
+                            <label className="text-sm font-medium text-slate-700">
+                                {t.common.visibility}
+                            </label>
+                            <CustomSelect
+                                value={Visibility.MEMBERS_ONLY}
+                                onChange={() => {}}
+                                options={[
+                                    {
+                                        value: Visibility.PUBLIC,
+                                        label: 'Public',
+                                    },
+                                    {
+                                        value: Visibility.MEMBERS_ONLY,
+                                        label: 'Members Only',
+                                    },
+                                    {
+                                        value: Visibility.PRIVATE,
+                                        label: 'Private',
+                                    },
+                                ]}
+                                placeholder={t.common.visibility}
+                                showSearch={false}
+                            />
+                        </div>
+
+                        <div className="md:col-span-6 space-y-3">
+                            <label className="text-sm font-medium text-slate-700">
+                                {t.common.bio}
+                            </label>
                             <Textarea
-                                id="notes"
+                                name="bio"
+                                placeholder="Tiểu sử tóm tắt..."
+                                rows={4}
+                            />
+                        </div>
+
+                        <div className="md:col-span-6 space-y-3">
+                            <label className="text-sm font-medium text-slate-700">
+                                {t.common.notes}
+                            </label>
+                            <Textarea
                                 name="notes"
                                 placeholder="Ghi chú thêm..."
+                                rows={3}
                             />
                         </div>
                     </CardContent>
@@ -333,12 +423,13 @@ export default function NewMemberPage() {
                             'Đang lưu...'
                         ) : (
                             <>
-                                <Save className="mr-2 h-4 w-4" /> Lưu
+                                <Save className="mr-2 h-4 w-4" />{' '}
+                                {t.common.save}
                             </>
                         )}
                     </Button>
                     <Button variant="outline" asChild>
-                        <Link href="/admin/members">Hủy bỏ</Link>
+                        <Link href="/admin/members">{t.common.cancel}</Link>
                     </Button>
                 </div>
             </form>

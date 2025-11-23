@@ -20,10 +20,10 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from '@/components/ui/dialog';
 import { getMarriages, deleteMarriage } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
+import { TableRowsSkeleton } from '@/components/ui/loading-skeletons';
 
 export default function MarriagesPage() {
     const [marriages, setMarriages] = useState<any[]>([]);
@@ -114,14 +114,7 @@ export default function MarriagesPage() {
                     </TableHeader>
                     <TableBody>
                         {loading ? (
-                            <TableRow>
-                                <TableCell
-                                    colSpan={5}
-                                    className="text-center py-8"
-                                >
-                                    Đang tải dữ liệu...
-                                </TableCell>
-                            </TableRow>
+                            <TableRowsSkeleton columns={5} rows={5} />
                         ) : filteredMarriages.length === 0 ? (
                             <TableRow>
                                 <TableCell
@@ -157,49 +150,16 @@ export default function MarriagesPage() {
                                         </span>
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Dialog>
-                                            <DialogTrigger asChild>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                                                    onClick={() =>
-                                                        setDeleteId(marriage.id)
-                                                    }
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </DialogTrigger>
-                                            <DialogContent>
-                                                <DialogHeader>
-                                                    <DialogTitle>
-                                                        Xác nhận xóa
-                                                    </DialogTitle>
-                                                    <DialogDescription>
-                                                        Bạn có chắc chắn muốn
-                                                        xóa thông tin hôn nhân
-                                                        này không? Hành động này
-                                                        không thể hoàn tác.
-                                                    </DialogDescription>
-                                                </DialogHeader>
-                                                <DialogFooter>
-                                                    <Button
-                                                        variant="outline"
-                                                        onClick={() =>
-                                                            setDeleteId(null)
-                                                        }
-                                                    >
-                                                        Hủy
-                                                    </Button>
-                                                    <Button
-                                                        variant="destructive"
-                                                        onClick={handleDelete}
-                                                    >
-                                                        Xóa
-                                                    </Button>
-                                                </DialogFooter>
-                                            </DialogContent>
-                                        </Dialog>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                            onClick={() =>
+                                                setDeleteId(marriage.id)
+                                            }
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
                                     </TableCell>
                                 </TableRow>
                             ))
@@ -207,6 +167,32 @@ export default function MarriagesPage() {
                     </TableBody>
                 </Table>
             </div>
+
+            <Dialog
+                open={!!deleteId}
+                onOpenChange={(open) => !open && setDeleteId(null)}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Xác nhận xóa</DialogTitle>
+                        <DialogDescription>
+                            Bạn có chắc chắn muốn xóa thông tin hôn nhân này
+                            không? Hành động này không thể hoàn tác.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setDeleteId(null)}
+                        >
+                            Hủy
+                        </Button>
+                        <Button variant="destructive" onClick={handleDelete}>
+                            Xóa
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

@@ -4,8 +4,11 @@ import { Bell, User } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getCurrentUser } from '@/lib/api';
 import { User as UserType } from '@/types';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export function Header() {
+    const { t } = useLanguage();
     // Always initialize as null to avoid hydration mismatch
     const [user, setUser] = useState<UserType | null>(null);
 
@@ -19,10 +22,11 @@ export function Header() {
             <div className="flex items-center gap-4">
                 {/* Breadcrumbs could go here */}
                 <h1 className="text-sm font-medium text-slate-500">
-                    {user?.displayName || 'Admin Area'}
+                    {user?.displayName || t.common.adminArea}
                 </h1>
             </div>
             <div className="flex items-center gap-4">
+                <LanguageSwitcher />
                 <button className="p-1 hover:bg-slate-100 rounded transition-colors text-slate-500">
                     <Bell className="h-5 w-5" />
                 </button>

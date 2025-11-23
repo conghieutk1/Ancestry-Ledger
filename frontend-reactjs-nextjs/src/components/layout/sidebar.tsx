@@ -16,40 +16,42 @@ import {
 import { cn } from '@/lib/utils';
 import { logout, getCurrentUser } from '@/lib/api';
 import { User } from '@/types';
-
-const navItems = [
-    {
-        title: 'Dashboard',
-        href: '/admin',
-        icon: LayoutDashboard,
-    },
-    {
-        title: 'Members',
-        href: '/admin/members',
-        icon: Users,
-    },
-    {
-        title: 'Users',
-        href: '/admin/users',
-        icon: UserCog,
-    },
-    {
-        title: 'Branches',
-        href: '/admin/branches',
-        icon: GitBranch,
-    },
-    {
-        title: 'Tree View',
-        href: '/tree',
-        icon: Network,
-    },
-];
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export function Sidebar() {
+    const { t } = useLanguage();
     const pathname = usePathname();
     const [isCollapsed, setIsCollapsed] = useState(false);
     // Always initialize as null to avoid hydration mismatch
     const [user, setUser] = useState<User | null>(null);
+
+    const navItems = [
+        {
+            title: t.sidebar.dashboard,
+            href: '/admin',
+            icon: LayoutDashboard,
+        },
+        {
+            title: t.sidebar.members,
+            href: '/admin/members',
+            icon: Users,
+        },
+        {
+            title: t.sidebar.users,
+            href: '/admin/users',
+            icon: UserCog,
+        },
+        {
+            title: t.sidebar.branches,
+            href: '/admin/branches',
+            icon: GitBranch,
+        },
+        {
+            title: t.sidebar.treeView,
+            href: '/tree',
+            icon: Network,
+        },
+    ];
 
     // Load user only after component mounts on client
     useEffect(() => {
@@ -144,10 +146,10 @@ export function Sidebar() {
                         isCollapsed ? 'w-full h-9' : 'w-full'
                     )}
                     onClick={logout}
-                    title={isCollapsed ? 'Logout' : undefined}
+                    title={isCollapsed ? t.sidebar.logout : undefined}
                 >
                     <LogOut className="h-4 w-4 flex-shrink-0" />
-                    {!isCollapsed && 'Logout'}
+                    {!isCollapsed && t.sidebar.logout}
                 </button>
             </div>
         </div>

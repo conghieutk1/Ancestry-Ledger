@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { getUsers } from '@/lib/api';
 import { User } from '@/types';
+import { TableRowsSkeleton } from '@/components/ui/loading-skeletons';
 
 export default function UsersPage() {
     const [users, setUsers] = useState<User[]>([]);
@@ -101,14 +102,7 @@ export default function UsersPage() {
                     </TableHeader>
                     <TableBody>
                         {loading ? (
-                            <TableRow>
-                                <TableCell
-                                    colSpan={4}
-                                    className="text-center py-8 text-slate-500"
-                                >
-                                    Loading users...
-                                </TableCell>
-                            </TableRow>
+                            <TableRowsSkeleton columns={4} rows={5} />
                         ) : filteredUsers.length === 0 ? (
                             <TableRow>
                                 <TableCell

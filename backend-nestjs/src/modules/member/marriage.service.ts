@@ -11,6 +11,7 @@ import { CreateMarriageDto } from './dto/create-marriage.dto';
 import { UpdateMarriageDto } from './dto/update-marriage.dto';
 import { Gender } from './entities/member.entity';
 import { GenealogyService } from './genealogy.service';
+import { GenealogyConfig } from './genealogy.config';
 
 @Injectable()
 export class MarriageService {
@@ -76,9 +77,13 @@ export class MarriageService {
         partner2Id,
       );
       if (areSiblings) {
-        throw new BadRequestException(
-          'Cannot marry siblings - Genealogical restriction (Không được kết hôn với anh em ruột)',
-        );
+        throw new BadRequestException({
+          message: 'Cannot marry close relatives',
+          error: 'FORBIDDEN_MARRIAGE',
+          relationshipKey: 'siblings',
+          distance: 2,
+          limit: GenealogyConfig.FORBIDDEN_GENERATION_LIMIT,
+        });
       }
 
       // Check ancestor-descendant relationship
@@ -96,18 +101,47 @@ export class MarriageService {
           'Cannot marry ancestors and descendants - Genealogical restriction (Không được kết hôn với tổ tiên/hậu duệ)',
         );
       }
+
+      // Check consanguinity distance
+      const distance = await this.genealogyService.getConsanguinityDistance(
+        partner1Id,
+        partner2Id,
+      );
+      if (
+        distance !== -1 &&
+        distance <= GenealogyConfig.FORBIDDEN_GENERATION_LIMIT
+      ) {
+        // Map distance to relationship key for frontend translation
+        let relationshipKey = 'unknown';
+        if (distance === 2) relationshipKey = 'siblings';
+        else if (distance === 3) relationshipKey = 'uncleAuntNephewNiece';
+        else if (distance === 4) relationshipKey = 'firstCousins';
+        else if (distance === 5) relationshipKey = 'distantRelative5';
+        else if (distance === 6) relationshipKey = 'distantRelative6';
+
+        throw new BadRequestException({
+          message: 'Cannot marry close relatives',
+          error: 'FORBIDDEN_MARRIAGE',
+          relationshipKey: relationshipKey,
+          distance: distance,
+          limit: GenealogyConfig.FORBIDDEN_GENERATION_LIMIT,
+        });
+      }
     }
 
+    // Determine final Partner1 (Male) and Partner2 (Female)
     let finalP1 = p1;
     let finalP2 = p2;
 
     if (p2) {
+      // Logic to enforce partner1 = Male, partner2 = Female
       const isP1Male = p1.gender === Gender.MALE;
       const isP1Female = p1.gender === Gender.FEMALE;
       const isP2Male = p2.gender === Gender.MALE;
       const isP2Female = p2.gender === Gender.FEMALE;
 
       if (isP1Female && isP2Male) {
+        // Swap
         finalP1 = p2;
         finalP2 = p1;
       } else if (isP1Male && isP2Female) {
@@ -121,13 +155,52 @@ export class MarriageService {
           'Marriage must be between a Male and a Female (Genealogy convention)',
         );
       } else {
+        // Handle Unknown/Other cases
+        // If p1 is Female, swap (assuming p2 is Male/Unknown)
         if (isP1Female) {
           finalP1 = p2;
           finalP2 = p1;
-        } else if (isP2Male) {
+        }
+        // If p2 is Male, swap (assuming p1 is Unknown)
+        else if (isP2Male) {
           finalP1 = p2;
           finalP2 = p1;
         }
+      }
+    }
+
+    const date = startDate ? new Date(startDate) : new Date();
+
+    // Validate Age
+    const calculateAge = (dob: Date, targetDate: Date) => {
+      const ageDifMs = targetDate.getTime() - dob.getTime();
+      const ageDate = new Date(ageDifMs); // miliseconds from epoch
+      return Math.abs(ageDate.getUTCFullYear() - 1970);
+    };
+
+    if (finalP1.dateOfBirth) {
+      const age = calculateAge(new Date(finalP1.dateOfBirth), date);
+      if (age < GenealogyConfig.MIN_AGE_MALE) {
+        throw new BadRequestException({
+          message: 'Partner does not meet minimum age requirement',
+          error: 'AGE_REQUIREMENT',
+          gender: 'MALE',
+          minAge: GenealogyConfig.MIN_AGE_MALE,
+          currentAge: age,
+        });
+      }
+    }
+
+    if (finalP2 && finalP2.dateOfBirth) {
+      const age = calculateAge(new Date(finalP2.dateOfBirth), date);
+      if (age < GenealogyConfig.MIN_AGE_FEMALE) {
+        throw new BadRequestException({
+          message: 'Partner does not meet minimum age requirement',
+          error: 'AGE_REQUIREMENT',
+          gender: 'FEMALE',
+          minAge: GenealogyConfig.MIN_AGE_FEMALE,
+          currentAge: age,
+        });
       }
     }
 
@@ -140,8 +213,6 @@ export class MarriageService {
       );
       return [...m1, ...m2];
     };
-
-    const date = startDate ? new Date(startDate) : new Date();
 
     if (status === MarriageStatus.SINGLE) {
       const activeMarriages = getActiveMarriages(p1);

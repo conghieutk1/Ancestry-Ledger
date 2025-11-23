@@ -20,12 +20,11 @@ export const GENEALOGY_RULES = {
   // Cho phép kết hôn với em họ (nếu MIN_CONSANGUINITY_DISTANCE >= 3)
   ALLOW_COUSIN_MARRIAGE: true,
 
-  // Thông báo lỗi (có thể dịch/customize)
+  // Error messages (Note: Actual implementation uses structured errors with relationshipKey)
   ERROR_MESSAGES: {
-    SIBLINGS:
-      'Cannot marry siblings - Genealogical restriction (Không được kết hôn với anh em ruột)',
+    SIBLINGS: 'Cannot marry close relatives (siblings)',
     ANCESTOR_DESCENDANT:
-      'Cannot marry ancestors and descendants - Genealogical restriction (Không được kết hôn với tổ tiên/hậu duệ)',
+      'Cannot marry ancestors and descendants - Genealogical restriction',
     SAME_GENDER:
       'Marriage must be between a Male and a Female (Genealogy convention)',
     DIFFERENT_MEMBERS: 'Partners must be different members',

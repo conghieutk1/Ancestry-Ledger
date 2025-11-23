@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getBranches } from '@/lib/api';
 import { FamilyBranch } from '@/types';
+import { DashboardStatsSkeleton } from '@/components/ui/loading-skeletons';
 
 export default function BranchesPage() {
     const [branches, setBranches] = useState<FamilyBranch[]>([]);
@@ -47,9 +48,7 @@ export default function BranchesPage() {
             </div>
 
             {loading ? (
-                <div className="text-center py-12 text-slate-500">
-                    Loading branches...
-                </div>
+                <DashboardStatsSkeleton />
             ) : branches.length === 0 ? (
                 <div className="text-center py-12 text-slate-500">
                     No branches found. Create your first branch to get started.

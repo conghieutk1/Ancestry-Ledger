@@ -12,6 +12,9 @@ export const metadata: Metadata = {
     description: 'Genealogy Management System',
 };
 
+import { LanguageProvider } from '@/contexts/LanguageContext';
+import { Toaster } from '@/components/ui/sonner';
+
 export default function RootLayout({
     children,
 }: Readonly<{
@@ -19,7 +22,12 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en" suppressHydrationWarning>
-            <body className={`${inter.variable} antialiased`}>{children}</body>
+            <body className={`${inter.variable} antialiased`}>
+                <LanguageProvider>
+                    {children}
+                    <Toaster />
+                </LanguageProvider>
+            </body>
         </html>
     );
 }

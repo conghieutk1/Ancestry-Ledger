@@ -9,6 +9,7 @@ import {
 import { Member } from './member.entity';
 
 export enum MarriageStatus {
+  SINGLE = 'SINGLE',
   MARRIED = 'MARRIED',
   DIVORCED = 'DIVORCED',
   SEPARATED = 'SEPARATED',
