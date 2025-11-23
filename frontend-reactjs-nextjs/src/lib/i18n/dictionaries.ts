@@ -7,6 +7,8 @@ export const dictionaries = {
             error: 'Error',
             save: 'Save',
             saving: 'Saving...',
+            create: 'Create',
+            creating: 'Creating...',
             cancel: 'Cancel',
             delete: 'Delete',
             deleting: 'Deleting...',
@@ -20,6 +22,7 @@ export const dictionaries = {
             placeOfBirth: 'Place of Birth',
             placeOfDeath: 'Place of Death',
             occupation: 'Occupation',
+            phoneNumber: 'Phone Number',
             notes: 'Notes',
             bio: 'Biography',
             father: 'Father',
@@ -42,6 +45,7 @@ export const dictionaries = {
             selectFather: 'Select Father',
             selectMother: 'Select Mother',
             selectBranch: 'Select Branch',
+            autoSelect: 'Autofill',
             selectSpouse: 'Select Spouse',
             required: 'Required',
             success: 'Success',
@@ -49,6 +53,18 @@ export const dictionaries = {
             avatarUrl: 'Avatar URL',
             generationIndex: 'Generation Index',
             visibility: 'Visibility',
+            dangerZone: 'Danger Zone',
+            deleteMember: 'Delete Member',
+            deleteWarning: 'This action cannot be undone.',
+            confirmSave: 'Confirm Save',
+            confirmSaveMessage: 'Are you sure you want to save changes?',
+            clear: 'Clear',
+            generationPrefix: 'Generation',
+            visibilityOptions: {
+                public: 'Public',
+                membersOnly: 'Members Only',
+                private: 'Private',
+            },
         },
         members: {
             title: 'Members',
@@ -57,6 +73,9 @@ export const dictionaries = {
             newMember: 'New Member',
             newMemberSubtitle:
                 'Create a new member profile in the family tree.',
+            rootMember: 'Root Member (First Ancestor)',
+            rootMemberDescription:
+                'This is the first member in the family tree. No parents or spouse selection required.',
             editMember: 'Edit Member',
             personalInfo: 'Personal Information',
             familyConnections: 'Family Connections',
@@ -68,23 +87,22 @@ export const dictionaries = {
             addMarriageDescription:
                 'Add a new marriage relationship for this member.',
             marriageDate: 'Marriage Date',
-            noSpouse: 'No marriage information (Single).',
+            useMaritalStatusCard:
+                'Please use the Marital Status section below to manage spouses.',
             noProfile: 'No profile',
+            noSpouse: 'No spouse',
             viewProfile: 'View Profile',
-            deleteMember: 'Delete Member',
-            deleteMemberConfirm: 'Are you sure you want to delete this member?',
-            childrenList: 'Children List',
-            totalChildren: 'Total children',
-            noChildren: 'No children data',
-            noChildrenDesc:
-                'This person has no children recorded in the system.',
             filters: {
-                allBranches: 'All Branches',
                 allGenders: 'All Genders',
                 allStatuses: 'All Statuses',
-                clear: 'Clear',
-                activeFilters: 'Active filters',
+                allBranches: 'All Branches',
+                clear: 'Clear Filters',
+                activeFilters: 'Active Filters',
             },
+            childrenList: 'Children List',
+            totalChildren: 'Total Children',
+            noChildren: 'No children',
+            noChildrenDesc: 'This member has no children recorded.',
             table: {
                 member: 'Member',
                 parents: 'Parents',
@@ -157,6 +175,16 @@ export const dictionaries = {
                 'Male partner must be at least {minAge} years old. Current age: {currentAge}',
             ageRequirementFemale:
                 'Female partner must be at least {minAge} years old. Current age: {currentAge}',
+            validationConnectionRequired:
+                'Please select Father/Mother or Spouse to link this member to the family tree.',
+            validationAgeNewMember:
+                'New member is not old enough to marry (Minimum {minAge} years old).',
+            validationAgeSpouse:
+                'Selected Spouse is not old enough to marry (Minimum {minAge} years old).',
+            marriageCreateError:
+                'Member created successfully but failed to create marriage record.',
+            refreshSuccess: 'Data refreshed successfully',
+            refreshError: 'Failed to refresh data',
         },
     },
     vi: {
@@ -165,6 +193,8 @@ export const dictionaries = {
             error: 'Lỗi',
             save: 'Lưu',
             saving: 'Đang lưu...',
+            create: 'Tạo mới',
+            creating: 'Đang tạo...',
             cancel: 'Hủy',
             delete: 'Xóa',
             deleting: 'Đang xóa...',
@@ -178,6 +208,7 @@ export const dictionaries = {
             placeOfBirth: 'Nơi sinh',
             placeOfDeath: 'Nơi mất',
             occupation: 'Nghề nghiệp',
+            phoneNumber: 'Số điện thoại',
             notes: 'Ghi chú',
             bio: 'Tiểu sử',
             father: 'Cha',
@@ -200,6 +231,7 @@ export const dictionaries = {
             selectFather: 'Chọn Cha',
             selectMother: 'Chọn Mẹ',
             selectBranch: 'Chọn Chi/Nhánh',
+            autoSelect: 'Tự động điền',
             selectSpouse: 'Chọn Vợ/Chồng',
             required: 'Bắt buộc',
             success: 'Thành công',
@@ -207,6 +239,18 @@ export const dictionaries = {
             avatarUrl: 'Link ảnh đại diện',
             generationIndex: 'Đời thứ',
             visibility: 'Quyền riêng tư',
+            dangerZone: 'Vùng nguy hiểm',
+            deleteMember: 'Xóa thành viên',
+            deleteWarning: 'Hành động này không thể hoàn tác.',
+            confirmSave: 'Xác nhận lưu',
+            confirmSaveMessage: 'Bạn có chắc chắn muốn lưu các thay đổi?',
+            clear: 'Xóa',
+            generationPrefix: 'Đời',
+            visibilityOptions: {
+                public: 'Công khai',
+                membersOnly: 'Thành viên',
+                private: 'Riêng tư',
+            },
         },
         members: {
             title: 'Thành viên',
@@ -214,6 +258,9 @@ export const dictionaries = {
             addMember: 'Thêm thành viên',
             newMember: 'Thêm thành viên mới',
             newMemberSubtitle: 'Tạo hồ sơ thành viên mới trong gia phả.',
+            rootMember: 'Thành viên đầu tiên (Ông tổ)',
+            rootMemberDescription:
+                'Đây là thành viên đầu tiên trong gia phả. Không cần chọn Cha/Mẹ hoặc Vợ/Chồng.',
             editMember: 'Chỉnh sửa thành viên',
             personalInfo: 'Thông tin cá nhân',
             familyConnections: 'Quan hệ gia đình',
@@ -225,23 +272,22 @@ export const dictionaries = {
             addMarriageDescription:
                 'Thêm mối quan hệ hôn nhân mới cho thành viên này.',
             marriageDate: 'Ngày cưới',
-            noSpouse: 'Chưa có thông tin hôn nhân (Độc thân).',
-            noProfile: 'Không có hồ sơ',
+            useMaritalStatusCard:
+                'Vui lòng sử dụng phần Tình trạng hôn nhân bên dưới để quản lý vợ/chồng.',
+            noProfile: 'Chưa có hồ sơ',
+            noSpouse: 'Chưa có vợ/chồng',
             viewProfile: 'Xem hồ sơ',
-            deleteMember: 'Xóa thành viên',
-            deleteMemberConfirm: 'Bạn có chắc chắn muốn xóa thành viên này?',
-            childrenList: 'Danh sách con',
-            totalChildren: 'Tổng số con',
-            noChildren: 'Không có dữ liệu con',
-            noChildrenDesc:
-                'Người này chưa có con được ghi nhận trong hệ thống.',
             filters: {
-                allBranches: 'Tất cả chi',
                 allGenders: 'Tất cả giới tính',
                 allStatuses: 'Tất cả trạng thái',
+                allBranches: 'Tất cả chi/nhánh',
                 clear: 'Xóa bộ lọc',
-                activeFilters: 'Bộ lọc đang chọn',
+                activeFilters: 'Bộ lọc đang áp dụng',
             },
+            childrenList: 'Danh sách con cái',
+            totalChildren: 'Tổng số con',
+            noChildren: 'Chưa có con',
+            noChildrenDesc: 'Thành viên này chưa có con được ghi nhận.',
             table: {
                 member: 'Thành viên',
                 parents: 'Cha Mẹ',
@@ -314,6 +360,16 @@ export const dictionaries = {
                 'Nam phải đủ {minAge} tuổi. Tuổi hiện tại: {currentAge}',
             ageRequirementFemale:
                 'Nữ phải đủ {minAge} tuổi. Tuổi hiện tại: {currentAge}',
+            validationConnectionRequired:
+                'Vui lòng chọn Cha/Mẹ hoặc Vợ/Chồng để liên kết thành viên này với gia phả.',
+            validationAgeNewMember:
+                'Thành viên mới chưa đủ tuổi kết hôn (Tối thiểu {minAge} tuổi).',
+            validationAgeSpouse:
+                'Vợ/Chồng được chọn chưa đủ tuổi kết hôn (Tối thiểu {minAge} tuổi).',
+            marriageCreateError:
+                'Tạo thành viên thành công nhưng lỗi khi tạo kết hôn.',
+            refreshSuccess: 'Dữ liệu đã được làm mới',
+            refreshError: 'Lỗi khi tải dữ liệu',
         },
     },
 };

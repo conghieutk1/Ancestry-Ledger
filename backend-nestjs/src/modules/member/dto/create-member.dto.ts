@@ -71,12 +71,22 @@ export class CreateMemberDto {
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()
+  phoneNumber?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
   bio?: string;
 
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()
   notes?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  avatarUrl?: string;
 
   @ApiPropertyOptional()
   @IsOptional()

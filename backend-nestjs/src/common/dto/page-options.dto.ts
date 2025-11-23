@@ -55,6 +55,16 @@ export class PageOptionsDto {
   @Type(() => Boolean)
   readonly isAlive?: boolean;
 
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  readonly generation?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => String)
+  readonly placeOfBirth?: string;
+
   get skip(): number {
     return (this.page - 1) * this.take;
   }

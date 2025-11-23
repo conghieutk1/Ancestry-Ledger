@@ -3,8 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
     ArrowLeft,
     Trash,
@@ -12,6 +11,8 @@ import {
     Check,
     ChevronsUpDown,
     Search,
+    RefreshCw,
+    X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,6 +37,7 @@ import { CustomSelect } from '@/components/ui/custom-select';
 import { CustomDatePicker } from '@/components/ui/custom-date-picker';
 import {
     getMember,
+    getMemberChildren,
     updateMember,
     deleteMember,
     getMembers,
@@ -48,7 +50,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 
 export function MemberDetailPageClient({ id }: { id: string }) {
-    const { t } = useLanguage();
+    const { t, locale } = useLanguage();
     const router = useRouter();
     const searchParams = useSearchParams();
     const [member, setMember] = useState<Member | null>(null);
@@ -56,6 +58,9 @@ export function MemberDetailPageClient({ id }: { id: string }) {
     const [saving, setSaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [error, setError] = useState('');
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [showSaveDialog, setShowSaveDialog] = useState(false);
+    const [pendingFormData, setPendingFormData] = useState<any>(null);
 
     // Marriage Modal State
     const [showMarriageModal, setShowMarriageModal] = useState(false);
@@ -70,6 +75,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
     const [fatherId, setFatherId] = useState('');
     const [motherId, setMotherId] = useState('');
     const [allMembers, setAllMembers] = useState<Member[]>([]);
+    const [children, setChildren] = useState<Member[]>([]);
 
     // Dropdown Portal State
     const triggerRef = useRef<HTMLButtonElement>(null);
@@ -85,6 +91,10 @@ export function MemberDetailPageClient({ id }: { id: string }) {
             setMember(data);
             setFatherId(data.father?.id || '');
             setMotherId(data.mother?.id || '');
+
+            // Fetch children separately
+            const childrenData = await getMemberChildren(id);
+            setChildren(childrenData);
         } catch (err) {
             console.error(err);
             setError('Failed to load member.');
@@ -161,8 +171,6 @@ export function MemberDetailPageClient({ id }: { id: string }) {
     const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!member) return;
-        setSaving(true);
-        setError('');
 
         const formData = new FormData(e.currentTarget);
         // We need to cast to any because UpdateMemberDto includes fatherId/motherId which might not be in Partial<Member> depending on type definition
@@ -178,6 +186,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
             placeOfBirth: formData.get('placeOfBirth') as string,
             placeOfDeath: formData.get('placeOfDeath') as string,
             occupation: formData.get('occupation') as string,
+            phoneNumber: formData.get('phoneNumber') as string,
             bio: formData.get('bio') as string,
             notes: formData.get('notes') as string,
             avatarUrl: formData.get('avatarUrl') as string,
@@ -189,32 +198,55 @@ export function MemberDetailPageClient({ id }: { id: string }) {
             motherId: motherId || null,
         };
 
+        setPendingFormData(updates);
+        setShowSaveDialog(true);
+    };
+
+    const confirmSave = async () => {
+        if (!member || !pendingFormData) return;
+        setSaving(true);
+        setError('');
+
         try {
-            await updateMember(member.id, updates);
-            toast.success(t.messages.updateSuccess);
+            await updateMember(member.id, pendingFormData);
+            toast.success(t.messages.updateSuccess, {
+                className: 'bg-emerald-500 text-white border-emerald-600',
+            });
             // Refresh
             await fetchMember();
             router.refresh();
+            setShowSaveDialog(false);
         } catch (err) {
             console.error(err);
-            toast.error(t.messages.updateError);
+            toast.error(t.messages.updateError, {
+                className: 'bg-red-500 text-white border-red-600',
+            });
             setError(t.messages.updateError);
         } finally {
             setSaving(false);
+            setPendingFormData(null);
         }
     };
 
-    const handleDelete = async () => {
-        if (!confirm(t.common.confirmDelete)) return;
+    const handleDelete = () => {
+        setShowDeleteDialog(true);
+    };
+
+    const confirmDelete = async () => {
         setDeleting(true);
         try {
             await deleteMember(id);
-            toast.success(t.messages.deleteSuccess);
+            toast.success(t.messages.deleteSuccess, {
+                className: 'bg-emerald-500 text-white border-emerald-600',
+            });
             router.push('/admin/members');
         } catch (err) {
             console.error(err);
-            toast.error(t.messages.deleteError);
+            toast.error(t.messages.deleteError, {
+                className: 'bg-red-500 text-white border-red-600',
+            });
             setDeleting(false);
+            setShowDeleteDialog(false);
         }
     };
 
@@ -230,7 +262,9 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                     ? new Date(marriageDate).toISOString()
                     : undefined,
             });
-            toast.success(t.messages.marriageUpdateSuccess);
+            toast.success(t.messages.marriageUpdateSuccess, {
+                className: 'bg-emerald-500 text-white border-emerald-600',
+            });
             setShowMarriageModal(false);
             setMarriageDate('');
             setSelectedSpouseId('');
@@ -251,7 +285,9 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                 const msg = t.messages.cannotMarryRelative
                     .replace('{relationship}', relationship)
                     .replace('{limit}', limit.toString());
-                toast.error(msg);
+                toast.error(msg, {
+                    className: 'bg-red-500 text-white border-red-600',
+                });
             } else if (errorData?.error === 'AGE_REQUIREMENT') {
                 // Handle age requirement error
                 const gender = errorData.gender;
@@ -265,12 +301,16 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                 const msg = (t.messages as any)[msgKey]
                     .replace('{minAge}', minAge.toString())
                     .replace('{currentAge}', currentAge.toString());
-                toast.error(msg);
+                toast.error(msg, {
+                    className: 'bg-red-500 text-white border-red-600',
+                });
             } else {
                 // Generic error message
                 const msg =
                     errorData?.message || t.messages.marriageUpdateError;
-                toast.error(msg);
+                toast.error(msg, {
+                    className: 'bg-red-500 text-white border-red-600',
+                });
             }
         } finally {
             setSavingMarriage(false);
@@ -312,6 +352,9 @@ export function MemberDetailPageClient({ id }: { id: string }) {
             new Date(a.startDate || 0).getTime()
     );
 
+    // Check if member has children - if yes, disable changing parents
+    const hasChildren = children.length > 0;
+
     const filteredSpouses = potentialSpouses.filter((p) =>
         p.fullName.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -329,15 +372,20 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                         {member.fullName}
                     </h1>
                 </div>
-                <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={handleDelete}
-                    disabled={deleting}
-                >
-                    <Trash className="mr-2 h-4 w-4" />
-                    {t.common.delete}
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                            fetchMember();
+                            fetchAllMembers();
+                            toast.success('Đã làm mới dữ liệu');
+                        }}
+                    >
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Refresh
+                    </Button>
+                </div>
             </div>
 
             <form onSubmit={handleSave} className="space-y-6">
@@ -354,6 +402,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                             <Input
                                 name="lastName"
                                 defaultValue={member.lastName}
+                                placeholder="Đặng"
                             />
                         </div>
                         <div className="md:col-span-2 space-y-3">
@@ -363,6 +412,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                             <Input
                                 name="middleName"
                                 defaultValue={member.middleName || ''}
+                                placeholder="Hữu"
                             />
                         </div>
                         <div className="md:col-span-2 space-y-3">
@@ -455,6 +505,18 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                 defaultValue={member.occupation || ''}
                             />
                         </div>
+                        {member.isAlive && (
+                            <div className="md:col-span-2 space-y-3">
+                                <label className="text-sm font-medium text-slate-700">
+                                    {t.common.phoneNumber}
+                                </label>
+                                <Input
+                                    name="phoneNumber"
+                                    defaultValue={member.phoneNumber || ''}
+                                    placeholder=""
+                                />
+                            </div>
+                        )}
                         <div className="md:col-span-2 space-y-3">
                             <label className="text-sm font-medium text-slate-700">
                                 {t.common.avatarUrl}
@@ -542,143 +604,243 @@ export function MemberDetailPageClient({ id }: { id: string }) {
 
                 {/* Family Connections Card */}
                 <Card>
-                    <CardHeader>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle>{t.members.familyConnections}</CardTitle>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                                setFatherId('');
+                                setMotherId('');
+                            }}
+                            type="button"
+                            disabled={hasChildren}
+                            className="h-8 px-2 text-slate-500 hover:text-red-600"
+                        >
+                            <X className="mr-1 h-4 w-4" />
+                            {t.common.clear}
+                        </Button>
                     </CardHeader>
                     <CardContent className="grid gap-4 md:grid-cols-6">
                         <div className="md:col-span-3 space-y-3">
                             <label className="text-sm font-medium text-slate-700">
                                 {t.common.father}
                             </label>
-                            <CustomSelect
-                                value={fatherId}
-                                onChange={(newFatherId) => {
-                                    setFatherId(newFatherId);
-                                    // Auto-select mother if father is married
-                                    if (newFatherId) {
-                                        const father = allMembers.find(
-                                            (m) => m.id === newFatherId
-                                        );
-                                        if (father) {
-                                            // Check marriages where father is partner1
-                                            const w1 =
-                                                father.marriagesAsPartner1?.find(
-                                                    (m) =>
-                                                        m.status === 'MARRIED'
-                                                )?.partner2;
-                                            // Check marriages where father is partner2
-                                            const w2 =
-                                                father.marriagesAsPartner2?.find(
-                                                    (m) =>
-                                                        m.status === 'MARRIED'
-                                                )?.partner1;
+                            {hasChildren ||
+                            (member.gender === Gender.MALE &&
+                                marriages.length > 0) ? (
+                                <Input
+                                    value={
+                                        member.father
+                                            ? `${member.father.fullName} • ${
+                                                  member.father.dateOfBirth
+                                                      ? new Date(
+                                                            member.father.dateOfBirth
+                                                        ).getFullYear()
+                                                      : '?'
+                                              }`
+                                            : ''
+                                    }
+                                    disabled
+                                    placeholder={t.common.selectFather}
+                                    className="bg-slate-50"
+                                />
+                            ) : (
+                                <CustomSelect
+                                    value={fatherId}
+                                    onChange={(newFatherId) => {
+                                        setFatherId(newFatherId);
+                                        // Auto-select mother if father is married
+                                        if (newFatherId) {
+                                            const father = allMembers.find(
+                                                (m) => m.id === newFatherId
+                                            );
+                                            if (father) {
+                                                const activeMarriage =
+                                                    father.marriagesAsPartner1?.find(
+                                                        (m) => !m.endDate
+                                                    ) ||
+                                                    father.marriagesAsPartner2?.find(
+                                                        (m) => !m.endDate
+                                                    );
 
-                                            const wifeId = w1?.id || w2?.id;
-                                            if (wifeId) {
-                                                setMotherId(wifeId);
+                                                if (activeMarriage) {
+                                                    const spouseId =
+                                                        activeMarriage.partner1
+                                                            .id === father.id
+                                                            ? activeMarriage
+                                                                  .partner2.id
+                                                            : activeMarriage
+                                                                  .partner1.id;
+                                                    setMotherId(spouseId);
+                                                }
                                             }
                                         }
-                                    }
-                                }}
-                                options={allMembers
-                                    .filter((m) => {
-                                        // Must be Male and not self
-                                        if (
-                                            m.gender !== Gender.MALE ||
-                                            m.id === member.id
-                                        )
-                                            return false;
+                                    }}
+                                    options={allMembers
+                                        .filter((m) => {
+                                            // Must be Male and not self
+                                            if (
+                                                m.gender !== Gender.MALE ||
+                                                m.id === member.id
+                                            )
+                                                return false;
 
-                                        // Filter by age: Parent must be older (birth year < member birth year)
-                                        // If either date is missing, allow it (to be safe)
-                                        if (
-                                            !member.dateOfBirth ||
-                                            !m.dateOfBirth
-                                        )
-                                            return true;
+                                            // Filter by age: Parent must be older
+                                            if (
+                                                !member.dateOfBirth ||
+                                                !m.dateOfBirth
+                                            )
+                                                return true;
 
-                                        const memberYear = new Date(
-                                            member.dateOfBirth
-                                        ).getFullYear();
-                                        const parentYear = new Date(
-                                            m.dateOfBirth
-                                        ).getFullYear();
+                                            const memberYear = new Date(
+                                                member.dateOfBirth
+                                            ).getFullYear();
+                                            const parentYear = new Date(
+                                                m.dateOfBirth
+                                            ).getFullYear();
 
-                                        return parentYear < memberYear;
-                                    })
-                                    .map((m) => ({
-                                        value: m.id,
-                                        label: `${m.fullName} • ${
-                                            m.dateOfBirth
-                                                ? new Date(
-                                                      m.dateOfBirth
-                                                  ).getFullYear()
-                                                : '?'
-                                        }`,
-                                    }))}
-                                placeholder={t.common.selectFather}
-                                searchPlaceholder={t.common.search}
-                            />
+                                            return parentYear < memberYear;
+                                        })
+                                        .map((m) => ({
+                                            value: m.id,
+                                            label: `${m.fullName} • ${
+                                                m.dateOfBirth
+                                                    ? new Date(
+                                                          m.dateOfBirth
+                                                      ).getFullYear()
+                                                    : '?'
+                                            }`,
+                                        }))}
+                                    placeholder={t.common.selectFather}
+                                    searchPlaceholder={t.common.search}
+                                />
+                            )}
                         </div>
                         <div className="md:col-span-3 space-y-3">
                             <label className="text-sm font-medium text-slate-700">
                                 {t.common.mother}
                             </label>
-                            <CustomSelect
-                                value={motherId}
-                                onChange={(newMotherId) => {
-                                    setMotherId(newMotherId);
-                                    // Auto-select father if mother is married
-                                    if (newMotherId) {
-                                        const mother = allMembers.find(
-                                            (m) => m.id === newMotherId
-                                        );
-                                        if (mother) {
-                                            // Check marriages where mother is partner1
-                                            const h1 =
-                                                mother.marriagesAsPartner1?.find(
-                                                    (m) =>
-                                                        m.status === 'MARRIED'
-                                                )?.partner2;
-                                            // Check marriages where mother is partner2
-                                            const h2 =
-                                                mother.marriagesAsPartner2?.find(
-                                                    (m) =>
-                                                        m.status === 'MARRIED'
-                                                )?.partner1;
+                            {hasChildren ||
+                            (member.gender === Gender.FEMALE &&
+                                marriages.length > 0) ? (
+                                <Input
+                                    value={
+                                        member.mother
+                                            ? `${member.mother.fullName} • ${
+                                                  member.mother.dateOfBirth
+                                                      ? new Date(
+                                                            member.mother.dateOfBirth
+                                                        ).getFullYear()
+                                                      : '?'
+                                              }`
+                                            : ''
+                                    }
+                                    disabled
+                                    placeholder={t.common.selectMother}
+                                    className="bg-slate-50"
+                                />
+                            ) : (
+                                <CustomSelect
+                                    value={motherId}
+                                    onChange={(newMotherId) => {
+                                        setMotherId(newMotherId);
+                                        // Auto-select father if mother is married
+                                        if (newMotherId) {
+                                            const mother = allMembers.find(
+                                                (m) => m.id === newMotherId
+                                            );
+                                            if (mother) {
+                                                const activeMarriage =
+                                                    mother.marriagesAsPartner1?.find(
+                                                        (m) => !m.endDate
+                                                    ) ||
+                                                    mother.marriagesAsPartner2?.find(
+                                                        (m) => !m.endDate
+                                                    );
 
-                                            const husbandId = h1?.id || h2?.id;
-                                            if (husbandId) {
-                                                setFatherId(husbandId);
+                                                if (activeMarriage) {
+                                                    const spouseId =
+                                                        activeMarriage.partner1
+                                                            .id === mother.id
+                                                            ? activeMarriage
+                                                                  .partner2.id
+                                                            : activeMarriage
+                                                                  .partner1.id;
+                                                    setFatherId(spouseId);
+                                                }
                                             }
                                         }
-                                    }
+                                    }}
+                                    options={allMembers
+                                        .filter((m) => {
+                                            // Must be Female and not self
+                                            if (
+                                                m.gender !== Gender.FEMALE ||
+                                                m.id === member.id
+                                            )
+                                                return false;
+
+                                            // Filter by age: Parent must be older
+                                            if (
+                                                !member.dateOfBirth ||
+                                                !m.dateOfBirth
+                                            )
+                                                return true;
+
+                                            const memberYear = new Date(
+                                                member.dateOfBirth
+                                            ).getFullYear();
+                                            const parentYear = new Date(
+                                                m.dateOfBirth
+                                            ).getFullYear();
+
+                                            return parentYear < memberYear;
+                                        })
+                                        .map((m) => ({
+                                            value: m.id,
+                                            label: `${m.fullName} • ${
+                                                m.dateOfBirth
+                                                    ? new Date(
+                                                          m.dateOfBirth
+                                                      ).getFullYear()
+                                                    : '?'
+                                            }`,
+                                        }))}
+                                    placeholder={t.common.selectMother}
+                                    searchPlaceholder={t.common.search}
+                                />
+                            )}
+                        </div>
+
+                        {/* Spouse Selection - Visual Only for now as Marital Status card handles logic */}
+                        <div className="md:col-span-6 space-y-3">
+                            <label className="text-sm font-medium text-slate-700">
+                                {t.common.spouse}
+                            </label>
+                            <CustomSelect
+                                value={
+                                    marriages.find((m) => !m.endDate)
+                                        ? marriages.find((m) => !m.endDate)!
+                                              .partner1.id === member.id
+                                            ? marriages.find((m) => !m.endDate)!
+                                                  .partner2.id
+                                            : marriages.find((m) => !m.endDate)!
+                                                  .partner1.id
+                                        : ''
+                                }
+                                onChange={() => {
+                                    toast.info(
+                                        t.members.useMaritalStatusCard ||
+                                            'Please use the Marital Status section below to manage spouses.'
+                                    );
                                 }}
                                 options={allMembers
-                                    .filter((m) => {
-                                        // Must be Female and not self
-                                        if (
-                                            m.gender !== Gender.FEMALE ||
-                                            m.id === member.id
-                                        )
-                                            return false;
-
-                                        // Filter by age: Parent must be older
-                                        if (
-                                            !member.dateOfBirth ||
-                                            !m.dateOfBirth
-                                        )
-                                            return true;
-
-                                        const memberYear = new Date(
-                                            member.dateOfBirth
-                                        ).getFullYear();
-                                        const parentYear = new Date(
-                                            m.dateOfBirth
-                                        ).getFullYear();
-
-                                        return parentYear < memberYear;
-                                    })
+                                    .filter(
+                                        (m) =>
+                                            m.id !== member.id &&
+                                            m.gender !== member.gender
+                                    )
                                     .map((m) => ({
                                         value: m.id,
                                         label: `${m.fullName} • ${
@@ -689,31 +851,42 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                                 : '?'
                                         }`,
                                     }))}
-                                placeholder={t.common.selectMother}
-                                searchPlaceholder={t.common.search}
+                                placeholder={t.common.selectSpouse}
+                                disabled={true} // Disabled to force use of Marital Status card for complex logic
+                                className="opacity-70"
                             />
                         </div>
-                    </CardContent>
-                </Card>
 
-                {/* Additional Information Card */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>{t.members.additionalInfo}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid gap-4 md:grid-cols-6">
-                        <div className="md:col-span-3 space-y-3">
+                        <div className="md:col-span-2 space-y-3">
+                            <label className="text-sm font-medium text-slate-700">
+                                {t.common.branch}
+                            </label>
+                            <Input
+                                value={member.branch?.name || ''}
+                                disabled
+                                placeholder={t.common.autoSelect}
+                                className="bg-slate-50"
+                            />
+                        </div>
+
+                        <div className="md:col-span-2 space-y-3">
                             <label className="text-sm font-medium text-slate-700">
                                 {t.common.generationIndex}
                             </label>
                             <Input
                                 name="generationIndex"
-                                type="number"
-                                defaultValue={member.generationIndex || ''}
+                                type="text"
+                                defaultValue={
+                                    member.generationIndex
+                                        ? `${t.common.generationPrefix} ${member.generationIndex}`
+                                        : ''
+                                }
                                 disabled
+                                className="bg-slate-50"
                             />
                         </div>
-                        <div className="md:col-span-3 space-y-3">
+
+                        <div className="md:col-span-2 space-y-3">
                             <label className="text-sm font-medium text-slate-700">
                                 {t.common.visibility}
                             </label>
@@ -731,22 +904,33 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                 options={[
                                     {
                                         value: Visibility.PUBLIC,
-                                        label: 'Public',
+                                        label: t.common.visibilityOptions
+                                            .public,
                                     },
                                     {
                                         value: Visibility.MEMBERS_ONLY,
-                                        label: 'Members Only',
+                                        label: t.common.visibilityOptions
+                                            .membersOnly,
                                     },
                                     {
                                         value: Visibility.PRIVATE,
-                                        label: 'Private',
+                                        label: t.common.visibilityOptions
+                                            .private,
                                     },
                                 ]}
                                 placeholder={t.common.visibility}
                                 showSearch={false}
                             />
                         </div>
+                    </CardContent>
+                </Card>
 
+                {/* Additional Information Card */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>{t.members.additionalInfo}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid gap-4 md:grid-cols-6">
                         <div className="md:col-span-6 space-y-3">
                             <label className="text-sm font-medium text-slate-700">
                                 {t.common.bio}
@@ -1112,12 +1296,23 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                 </CardHeader>
                 <CardContent>
                     {marriages.length === 0 ? (
-                        <p className="text-sm text-slate-500">
-                            {t.members.noSpouse}
-                        </p>
+                        <div className="text-center py-8">
+                            <p className="text-sm text-slate-500">
+                                {t.members.noSpouse}
+                            </p>
+                        </div>
                     ) : (
-                        <div className="space-y-4">
+                        <div className="space-y-3">
                             {marriages.map((m) => {
+                                const statusColors = {
+                                    MARRIED:
+                                        'bg-emerald-100 text-emerald-700 border-emerald-200',
+                                    SINGLE: 'bg-slate-100 text-slate-700 border-slate-200',
+                                    DIVORCED:
+                                        'bg-orange-100 text-orange-700 border-orange-200',
+                                    WIDOWED:
+                                        'bg-blue-100 text-blue-700 border-blue-200',
+                                };
                                 const spouse =
                                     m.partner1?.id === member.id
                                         ? m.partner2
@@ -1126,15 +1321,36 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                 return (
                                     <div
                                         key={m.id}
-                                        className="flex items-center justify-between p-4 border rounded-lg"
+                                        className="group relative flex items-center gap-4 p-4 border border-slate-200 rounded-xl hover:border-slate-300 hover:shadow-sm transition-all duration-200 bg-white"
                                     >
-                                        <div>
-                                            <p className="font-medium">
-                                                {spouse?.fullName ||
-                                                    t.common.unknown}
-                                            </p>
+                                        {/* Avatar Circle */}
+                                        <div className="shrink-0">
+                                            <div className="w-12 h-12 rounded-full bg-linear-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-600 font-semibold text-lg border-2 border-white shadow-sm">
+                                                {spouse?.fullName
+                                                    ?.charAt(0)
+                                                    ?.toUpperCase() || '?'}
+                                            </div>
+                                        </div>
+
+                                        {/* Info Section */}
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <h4 className="font-semibold text-slate-900 truncate">
+                                                    {spouse?.fullName ||
+                                                        t.common.unknown}
+                                                </h4>
+                                                <span
+                                                    className={cn(
+                                                        'px-2 py-0.5 text-xs font-medium rounded-md border',
+                                                        statusColors[
+                                                            m.status as keyof typeof statusColors
+                                                        ] || statusColors.SINGLE
+                                                    )}
+                                                >
+                                                    {getStatusLabel(m.status)}
+                                                </span>
+                                            </div>
                                             <p className="text-sm text-slate-500">
-                                                {m.status} •{' '}
                                                 {m.startDate
                                                     ? new Date(
                                                           m.startDate
@@ -1142,10 +1358,13 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                                     : '?'}
                                             </p>
                                         </div>
+
+                                        {/* Action Button */}
                                         {spouse?.id ? (
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
+                                                className="opacity-0 group-hover:opacity-100 transition-opacity"
                                                 asChild
                                             >
                                                 <Link
@@ -1155,7 +1374,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                                 </Link>
                                             </Button>
                                         ) : (
-                                            <span className="text-sm text-slate-500">
+                                            <span className="text-xs text-slate-400">
                                                 {t.members.noProfile}
                                             </span>
                                         )}
@@ -1166,6 +1385,77 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                     )}
                 </CardContent>
             </Card>
+
+            {/* Delete Section */}
+            <Card>
+                <CardContent className="flex items-center justify-between p-6">
+                    <div>
+                        <h4 className="font-medium text-slate-900">
+                            {t.common.deleteMember}
+                        </h4>
+                        <p className="text-sm text-slate-500">
+                            {t.common.deleteWarning}
+                        </p>
+                    </div>
+                    <Button
+                        variant="destructive"
+                        onClick={handleDelete}
+                        disabled={deleting}
+                    >
+                        <Trash className="mr-2 h-4 w-4" />
+                        {t.common.delete}
+                    </Button>
+                </CardContent>
+            </Card>
+
+            <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{t.common.deleteMember}</DialogTitle>
+                        <DialogDescription>
+                            {t.common.deleteWarning}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowDeleteDialog(false)}
+                            disabled={deleting}
+                        >
+                            {t.common.cancel}
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={confirmDelete}
+                            disabled={deleting}
+                        >
+                            {deleting ? t.common.deleting : t.common.delete}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{t.common.confirmSave}</DialogTitle>
+                        <DialogDescription>
+                            {t.common.confirmSaveMessage}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowSaveDialog(false)}
+                            disabled={saving}
+                        >
+                            {t.common.cancel}
+                        </Button>
+                        <Button onClick={confirmSave} disabled={saving}>
+                            {saving ? t.common.saving : t.common.save}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

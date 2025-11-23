@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
+import { CustomSelect } from '@/components/ui/custom-select';
 import {
     Table,
     TableBody,
@@ -89,6 +89,7 @@ export default function MembersPage() {
     const [selectedBranch, setSelectedBranch] = useState<string>('');
     const [selectedGender, setSelectedGender] = useState<string>('');
     const [selectedStatus, setSelectedStatus] = useState<string>('');
+    const [selectedGeneration, setSelectedGeneration] = useState<string>('');
 
     // Fetch branches on mount
     useEffect(() => {
@@ -125,6 +126,10 @@ export default function MembersPage() {
                 params.isAlive = selectedStatus === 'alive';
             }
 
+            if (selectedGeneration) {
+                params.generation = parseInt(selectedGeneration);
+            }
+
             const response = await getMembers(params);
             setMembers(response.data);
             setMeta(response.meta);
@@ -134,7 +139,14 @@ export default function MembersPage() {
         } finally {
             setLoading(false);
         }
-    }, [page, search, selectedBranch, selectedGender, selectedStatus]);
+    }, [
+        page,
+        search,
+        selectedBranch,
+        selectedGender,
+        selectedStatus,
+        selectedGeneration,
+    ]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -147,12 +159,17 @@ export default function MembersPage() {
         setSelectedBranch('');
         setSelectedGender('');
         setSelectedStatus('');
+        setSelectedGeneration('');
         setSearch('');
         setPage(1);
     };
 
     const hasActiveFilters =
-        selectedBranch || selectedGender || selectedStatus !== '' || search;
+        selectedBranch ||
+        selectedGender ||
+        selectedStatus !== '' ||
+        selectedGeneration ||
+        search;
 
     const handleChildrenClick = async (member: Member) => {
         if ((member.childrenCount || 0) === 0) return;
@@ -208,54 +225,90 @@ export default function MembersPage() {
                         />
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
-                        <Select
+                        <CustomSelect
                             value={selectedBranch}
-                            onChange={(e) => {
-                                setSelectedBranch(e.target.value);
+                            onChange={(value) => {
+                                setSelectedBranch(value);
                                 setPage(1);
                             }}
-                            className="w-[180px]"
-                        >
-                            <option value="">
-                                {t.members.filters.allBranches}
-                            </option>
-                            {branches.map((branch) => (
-                                <option key={branch.id} value={branch.id}>
-                                    {branch.name}
-                                </option>
-                            ))}
-                        </Select>
-                        <Select
+                            options={[
+                                {
+                                    value: '',
+                                    label: t.members.filters.allBranches,
+                                },
+                                ...branches.map((branch) => ({
+                                    value: branch.id,
+                                    label: branch.name,
+                                })),
+                            ]}
+                            placeholder={t.members.filters.allBranches}
+                            searchPlaceholder={t.common.search}
+                            className="w-[200px]"
+                        />
+                        <CustomSelect
                             value={selectedGender}
-                            onChange={(e) => {
-                                setSelectedGender(e.target.value);
+                            onChange={(value) => {
+                                setSelectedGender(value);
                                 setPage(1);
                             }}
-                            className="w-[140px]"
-                        >
-                            <option value="">
-                                {t.members.filters.allGenders}
-                            </option>
-                            <option value="MALE">{t.common.male}</option>
-                            <option value="FEMALE">{t.common.female}</option>
-                            <option value="OTHER">{t.common.other}</option>
-                        </Select>
-                        <Select
+                            options={[
+                                {
+                                    value: '',
+                                    label: t.members.filters.allGenders,
+                                },
+                                { value: 'MALE', label: t.common.male },
+                                { value: 'FEMALE', label: t.common.female },
+                                { value: 'OTHER', label: t.common.other },
+                            ]}
+                            placeholder={t.members.filters.allGenders}
+                            showSearch={false}
+                            className="w-[160px]"
+                        />
+                        <CustomSelect
                             value={selectedStatus}
-                            onChange={(e) => {
-                                setSelectedStatus(e.target.value);
+                            onChange={(value) => {
+                                setSelectedStatus(value);
                                 setPage(1);
                             }}
-                            className="w-[140px]"
-                        >
-                            <option value="">
-                                {t.members.filters.allStatuses}
-                            </option>
-                            <option value="alive">{t.common.alive}</option>
-                            <option value="deceased">
-                                {t.common.deceased}
-                            </option>
-                        </Select>
+                            options={[
+                                {
+                                    value: '',
+                                    label: t.members.filters.allStatuses,
+                                },
+                                { value: 'alive', label: t.common.alive },
+                                { value: 'deceased', label: t.common.deceased },
+                            ]}
+                            placeholder={t.members.filters.allStatuses}
+                            showSearch={false}
+                            className="w-[180px]"
+                        />
+                        <CustomSelect
+                            value={selectedGeneration}
+                            onChange={(value) => {
+                                setSelectedGeneration(value);
+                                setPage(1);
+                            }}
+                            options={[
+                                {
+                                    value: '',
+                                    label:
+                                        t.common.generationIndex ||
+                                        'Generation',
+                                },
+                                ...Array.from({ length: 20 }, (_, i) => ({
+                                    value: (i + 1).toString(),
+                                    label: `${
+                                        t.common.generationPrefix ||
+                                        'Generation'
+                                    } ${i + 1}`,
+                                })),
+                            ]}
+                            placeholder={
+                                t.common.generationIndex || 'Generation'
+                            }
+                            searchPlaceholder={t.common.search}
+                            className="w-[160px]"
+                        />
                         {hasActiveFilters && (
                             <Button
                                 variant="outline"
@@ -308,6 +361,17 @@ export default function MembersPage() {
                                     : t.common.deceased}
                                 <button
                                     onClick={() => setSelectedStatus('')}
+                                    className="ml-1 hover:text-slate-900"
+                                >
+                                    <X className="h-3 w-3" />
+                                </button>
+                            </Badge>
+                        )}
+                        {selectedGeneration && (
+                            <Badge variant="secondary" className="gap-1">
+                                {t.common.generationIndex}: {selectedGeneration}
+                                <button
+                                    onClick={() => setSelectedGeneration('')}
                                     className="ml-1 hover:text-slate-900"
                                 >
                                     <X className="h-3 w-3" />

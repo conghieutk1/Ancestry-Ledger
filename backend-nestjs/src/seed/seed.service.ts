@@ -116,6 +116,7 @@ export class SeedService {
 
     const firstName = 'Tổ';
     const lastName = 'Đặng';
+    const place = 'Hà Tĩnh';
 
     const root = this.memberRepository.create({
       firstName,
@@ -129,6 +130,12 @@ export class SeedService {
       generationIndex: 1,
       visibility: Visibility.PUBLIC,
       slug: this.generateSlug(firstName, lastName, yearOfBirth),
+      placeOfBirth: place,
+      placeOfDeath: place,
+      occupation: 'Nông dân',
+      bio: 'Người khai sinh ra dòng họ Đặng Hữu tại vùng đất này.',
+      notes: 'Mộ phần đặt tại khu A nghĩa trang dòng họ.',
+      phoneNumber: null, // No phone for ancestor
     });
     return this.memberRepository.save(root);
   }
@@ -155,6 +162,7 @@ export class SeedService {
       const firstName = headNames[i] || 'Hùng';
       const lastName = 'Đặng';
       const middleName = 'Hữu';
+      const place = 'Hà Tĩnh';
 
       const head = this.memberRepository.create({
         firstName,
@@ -171,6 +179,12 @@ export class SeedService {
         mother: rootSpouse,
         visibility: Visibility.PUBLIC,
         slug: this.generateSlug(firstName, lastName, birthYear),
+        placeOfBirth: place,
+        placeOfDeath: place,
+        occupation: 'Trưởng tộc/Trưởng chi',
+        bio: `Người đứng đầu ${branches[i].name}`,
+        notes: 'Có công lớn trong việc xây dựng nhà thờ họ.',
+        phoneNumber: null,
       });
       heads.push(await this.memberRepository.save(head));
     }
@@ -279,6 +293,10 @@ export class SeedService {
       );
     }
 
+    const place = this.generateRandomPlace();
+    const occupation = this.generateRandomOccupation();
+    const phoneNumber = isAlive ? this.generateRandomPhoneNumber() : null;
+
     const spouse = this.memberRepository.create({
       firstName,
       middleName,
@@ -288,9 +306,15 @@ export class SeedService {
       dateOfBirth,
       dateOfDeath,
       isAlive,
-      generationIndex: partner.generationIndex, // Same generation
+      generationIndex: partner.generationIndex, // Same generation as partner
       visibility: Visibility.PUBLIC,
       slug: this.generateSlug(firstName, lastName, birthYear),
+      placeOfBirth: place,
+      placeOfDeath: isAlive ? null : place,
+      occupation: occupation,
+      bio: `Vợ/Chồng của ${partner.fullName}`,
+      notes: 'Dâu/Rể trong dòng họ.',
+      phoneNumber: phoneNumber,
     });
 
     return this.memberRepository.save(spouse);
@@ -333,6 +357,10 @@ export class SeedService {
       );
     }
 
+    const place = this.generateRandomPlace();
+    const occupation = this.generateRandomOccupation();
+    const phoneNumber = isAlive ? this.generateRandomPhoneNumber() : null;
+
     const child = this.memberRepository.create({
       firstName,
       middleName,
@@ -348,6 +376,12 @@ export class SeedService {
       mother,
       visibility: Visibility.MEMBERS_ONLY,
       slug: this.generateSlug(firstName, lastName, birthYear),
+      placeOfBirth: place,
+      placeOfDeath: isAlive ? null : place,
+      occupation: occupation,
+      bio: `Con của ${father.fullName} và ${mother.fullName}`,
+      notes: '',
+      phoneNumber: phoneNumber,
     });
 
     return this.memberRepository.save(child);
@@ -502,6 +536,51 @@ export class SeedService {
     return gender === Gender.MALE
       ? this.randomItem(maleNames)
       : this.randomItem(femaleNames);
+  }
+
+  private generateRandomPlace(): string {
+    const places = [
+      'Hà Nội',
+      'Hồ Chí Minh',
+      'Đà Nẵng',
+      'Hải Phòng',
+      'Cần Thơ',
+      'Nghệ An',
+      'Thanh Hóa',
+      'Hà Tĩnh',
+      'Quảng Bình',
+      'Huế',
+      'Nam Định',
+      'Thái Bình',
+    ];
+    return this.randomItem(places);
+  }
+
+  private generateRandomOccupation(): string {
+    const occupations = [
+      'Giáo viên',
+      'Bác sĩ',
+      'Kỹ sư',
+      'Nông dân',
+      'Kinh doanh',
+      'Công chức',
+      'Bộ đội',
+      'Công an',
+      'Sinh viên',
+      'Học sinh',
+      'Nội trợ',
+      'Lập trình viên',
+    ];
+    return this.randomItem(occupations);
+  }
+
+  private generateRandomPhoneNumber(): string {
+    const prefixes = ['09', '03', '07', '08', '05'];
+    const prefix = this.randomItem(prefixes);
+    const suffix = Math.floor(Math.random() * 100000000)
+      .toString()
+      .padStart(8, '0');
+    return `${prefix}${suffix}`;
   }
 
   private randomItem<T>(arr: T[]): T {

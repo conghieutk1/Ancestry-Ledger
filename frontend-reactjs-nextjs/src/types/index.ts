@@ -52,6 +52,7 @@ export interface Member {
     placeOfBirth?: string;
     placeOfDeath?: string;
     occupation?: string;
+    phoneNumber?: string;
     generationIndex?: number;
     visibility: Visibility;
     branch?: FamilyBranch;

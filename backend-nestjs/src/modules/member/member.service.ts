@@ -112,6 +112,16 @@ export class MemberService {
       whereParams.isAlive = pageOptionsDto.isAlive;
     }
 
+    if (pageOptionsDto.generation) {
+      whereConditions.push('member.generationIndex = :generation');
+      whereParams.generation = pageOptionsDto.generation;
+    }
+
+    if (pageOptionsDto.placeOfBirth) {
+      whereConditions.push('member.placeOfBirth ILIKE :placeOfBirth');
+      whereParams.placeOfBirth = `%${pageOptionsDto.placeOfBirth}%`;
+    }
+
     // Apply where conditions
     if (whereConditions.length > 0) {
       if (whereConditions.length === 1) {
@@ -227,6 +237,33 @@ export class MemberService {
       ...createMemberDto,
     };
 
+    // Auto-create Branch for children of Root Member
+    // Root Member is defined as having no parents (father and mother are null)
+    if (createMemberDto.fatherId || createMemberDto.motherId) {
+      const parentId = createMemberDto.fatherId || createMemberDto.motherId;
+      const parent = await this.memberRepository.findOne({
+        where: { id: parentId },
+        relations: ['father', 'mother'],
+      });
+
+      if (parent && !parent.father && !parent.mother) {
+        // Parent is Root Member -> Create new Branch for this child
+        const maxOrderBranch = await this.branchRepository.find({
+          order: { branchOrder: 'DESC' },
+          take: 1,
+        });
+        const nextOrder = (maxOrderBranch[0]?.branchOrder || 0) + 1;
+
+        const newBranch = this.branchRepository.create({
+          name: `Chi ${nextOrder}`,
+          description: `Chi thứ ${nextOrder} của dòng họ`,
+          branchOrder: nextOrder,
+        });
+        const savedBranch = await this.branchRepository.save(newBranch);
+        memberData.branch = { id: savedBranch.id };
+      }
+    }
+
     // Handle relations
     if (createMemberDto.fatherId) {
       memberData.father = { id: createMemberDto.fatherId };
@@ -234,7 +271,8 @@ export class MemberService {
     if (createMemberDto.motherId) {
       memberData.mother = { id: createMemberDto.motherId };
     }
-    if (createMemberDto.branchId) {
+    // Only set branch from DTO if not already set by auto-creation logic
+    if (createMemberDto.branchId && !memberData.branch) {
       memberData.branch = { id: createMemberDto.branchId };
     }
 

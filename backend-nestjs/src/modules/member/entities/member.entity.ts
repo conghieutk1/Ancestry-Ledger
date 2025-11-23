@@ -81,6 +81,9 @@ export class Member {
   occupation: string;
 
   @Column({ nullable: true })
+  phoneNumber: string;
+
+  @Column({ nullable: true })
   generationIndex: number;
 
   @Column({
