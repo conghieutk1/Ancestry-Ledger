@@ -1,14 +1,16 @@
-import {
+﻿import {
   Injectable,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Marriage } from './entities/marriage.entity';
+import { Marriage, MarriageStatus } from './entities/marriage.entity';
 import { Member } from './entities/member.entity';
 import { CreateMarriageDto } from './dto/create-marriage.dto';
 import { UpdateMarriageDto } from './dto/update-marriage.dto';
+import { Gender } from './entities/member.entity';
+import { GenealogyService } from './genealogy.service';
 
 @Injectable()
 export class MarriageService {
@@ -17,6 +19,7 @@ export class MarriageService {
     private marriageRepository: Repository<Marriage>,
     @InjectRepository(Member)
     private memberRepository: Repository<Member>,
+    private genealogyService: GenealogyService,
   ) {}
 
   async findAll(): Promise<Marriage[]> {
@@ -38,36 +41,168 @@ export class MarriageService {
   }
 
   async create(createMarriageDto: CreateMarriageDto): Promise<Marriage> {
-    const { partner1Id, partner2Id, ...rest } = createMarriageDto;
+    const { partner1Id, partner2Id, status, startDate, ...rest } =
+      createMarriageDto;
 
-    // Validate partner1
-    const partner1 = await this.memberRepository.findOne({
+    const relations = [
+      'marriagesAsPartner1',
+      'marriagesAsPartner1.partner2',
+      'marriagesAsPartner2',
+      'marriagesAsPartner2.partner1',
+    ];
+
+    const p1 = await this.memberRepository.findOne({
       where: { id: partner1Id },
+      relations,
     });
-    if (!partner1)
+    if (!p1)
       throw new NotFoundException(`Member with ID ${partner1Id} not found`);
 
-    // Partner2 is optional (for DIVORCED, WIDOWED statuses)
-    let partner2 = null;
+    let p2 = null;
     if (partner2Id) {
       if (partner1Id === partner2Id) {
         throw new BadRequestException('Partners must be different members');
       }
-
-      partner2 = await this.memberRepository.findOne({
+      p2 = await this.memberRepository.findOne({
         where: { id: partner2Id },
+        relations,
       });
-      if (!partner2)
+      if (!p2)
         throw new NotFoundException(`Member with ID ${partner2Id} not found`);
+
+      // Validate blood relation - check for siblings
+      const areSiblings = await this.genealogyService.areSiblings(
+        partner1Id,
+        partner2Id,
+      );
+      if (areSiblings) {
+        throw new BadRequestException(
+          'Cannot marry siblings - Genealogical restriction (Không được kết hôn với anh em ruột)',
+        );
+      }
+
+      // Check ancestor-descendant relationship
+      const p1IsAncestorOfP2 = await this.genealogyService.isDescendant(
+        partner1Id,
+        partner2Id,
+      );
+      const p2IsAncestorOfP1 = await this.genealogyService.isDescendant(
+        partner2Id,
+        partner1Id,
+      );
+
+      if (p1IsAncestorOfP2 || p2IsAncestorOfP1) {
+        throw new BadRequestException(
+          'Cannot marry ancestors and descendants - Genealogical restriction (Không được kết hôn với tổ tiên/hậu duệ)',
+        );
+      }
+    }
+
+    let finalP1 = p1;
+    let finalP2 = p2;
+
+    if (p2) {
+      const isP1Male = p1.gender === Gender.MALE;
+      const isP1Female = p1.gender === Gender.FEMALE;
+      const isP2Male = p2.gender === Gender.MALE;
+      const isP2Female = p2.gender === Gender.FEMALE;
+
+      if (isP1Female && isP2Male) {
+        finalP1 = p2;
+        finalP2 = p1;
+      } else if (isP1Male && isP2Female) {
+        // Keep
+      } else if (isP1Female && isP2Female) {
+        throw new BadRequestException(
+          'Marriage must be between a Male and a Female (Genealogy convention)',
+        );
+      } else if (isP1Male && isP2Male) {
+        throw new BadRequestException(
+          'Marriage must be between a Male and a Female (Genealogy convention)',
+        );
+      } else {
+        if (isP1Female) {
+          finalP1 = p2;
+          finalP2 = p1;
+        } else if (isP2Male) {
+          finalP1 = p2;
+          finalP2 = p1;
+        }
+      }
+    }
+
+    const getActiveMarriages = (member: Member) => {
+      const m1 = (member.marriagesAsPartner1 || []).filter(
+        (m) => m.status === MarriageStatus.MARRIED && !m.endDate,
+      );
+      const m2 = (member.marriagesAsPartner2 || []).filter(
+        (m) => m.status === MarriageStatus.MARRIED && !m.endDate,
+      );
+      return [...m1, ...m2];
+    };
+
+    const date = startDate ? new Date(startDate) : new Date();
+
+    if (status === MarriageStatus.SINGLE) {
+      const activeMarriages = getActiveMarriages(p1);
+      for (const m of activeMarriages) {
+        m.endDate = date;
+        await this.marriageRepository.save(m);
+      }
+
+      if (p1.gender === Gender.MALE) {
+        const marriage = this.marriageRepository.create({
+          partner1: p1,
+          status: MarriageStatus.SINGLE,
+          startDate: date,
+          ...rest,
+        });
+        return this.marriageRepository.save(marriage);
+      }
+
+      return null as any;
+    }
+
+    if (
+      status === MarriageStatus.DIVORCED ||
+      status === MarriageStatus.WIDOWED
+    ) {
+      if (finalP2) {
+        const activeMarriages = getActiveMarriages(finalP1);
+        const targetMarriage = activeMarriages.find(
+          (m) => m.partner1.id === finalP1.id && m.partner2?.id === finalP2.id,
+        );
+
+        if (targetMarriage) {
+          targetMarriage.status = status as MarriageStatus;
+          targetMarriage.endDate = startDate ? new Date(startDate) : new Date();
+          if (rest.notes) targetMarriage.notes = rest.notes;
+          return this.marriageRepository.save(targetMarriage);
+        }
+      }
+    }
+
+    if (status === MarriageStatus.MARRIED) {
+      const activeMarriagesP1 = getActiveMarriages(finalP1);
+      const activeMarriagesP2 = finalP2 ? getActiveMarriages(finalP2) : [];
+
+      const allActive = new Set([...activeMarriagesP1, ...activeMarriagesP2]);
+
+      for (const m of allActive) {
+        m.endDate = date;
+        await this.marriageRepository.save(m);
+      }
     }
 
     const marriage = this.marriageRepository.create({
+      partner1: finalP1,
+      partner2: finalP2,
+      status: status as MarriageStatus,
+      startDate: startDate ? new Date(startDate) : undefined,
       ...rest,
-      partner1,
-      partner2,
     });
 
-    return this.marriageRepository.save(marriage);
+    return this.marriageRepository.save(marriage); // Handle partner updates if necessary, though usually we don't change partners in an update
   }
 
   async update(
@@ -76,7 +211,6 @@ export class MarriageService {
   ): Promise<Marriage> {
     const marriage = await this.findOne(id);
 
-    // Handle partner updates if necessary, though usually we don't change partners in an update
     if (updateMarriageDto.partner1Id) {
       const p1 = await this.memberRepository.findOne({
         where: { id: updateMarriageDto.partner1Id },
@@ -87,6 +221,7 @@ export class MarriageService {
         );
       marriage.partner1 = p1;
     }
+
     if (updateMarriageDto.partner2Id) {
       const p2 = await this.memberRepository.findOne({
         where: { id: updateMarriageDto.partner2Id },
@@ -98,19 +233,34 @@ export class MarriageService {
       marriage.partner2 = p2;
     }
 
-    Object.assign(marriage, updateMarriageDto);
+    if (updateMarriageDto.status) {
+      marriage.status = updateMarriageDto.status as MarriageStatus;
+    }
 
-    // Remove IDs from object to avoid overwriting relations with strings if they were passed
-    delete (marriage as any).partner1Id;
-    delete (marriage as any).partner2Id;
+    if (updateMarriageDto.startDate) {
+      marriage.startDate = new Date(updateMarriageDto.startDate);
+    }
 
+    if (updateMarriageDto.endDate) {
+      marriage.endDate = new Date(updateMarriageDto.endDate);
+    }
+
+    if (updateMarriageDto.notes) {
+      marriage.notes = updateMarriageDto.notes;
+    }
+
+    // return this.marr// iageRepository.
+    // save(const marriage = await this.findOne(id);
+    // await this.marriageRepository.remove(marriage);marriage);
     return this.marriageRepository.save(marriage);
   }
 
   async remove(id: string): Promise<void> {
-    const result = await this.marriageRepository.delete(id);
-    if (result.affected === 0) {
-      throw new NotFoundException(`Marriage with ID ${id} not found`);
-    }
+    // const result = await this.marriageRepository.delete(id);
+    // if (result.affected === 0) {
+    //   throw new NotFoundException(`Marriage with ID ${id} not found`);
+    // }
+    const marriage = await this.findOne(id);
+    await this.marriageRepository.remove(marriage);
   }
 }

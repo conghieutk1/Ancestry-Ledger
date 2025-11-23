@@ -8,11 +8,12 @@ import { MarriageService } from './marriage.service';
 import { MemberController } from './member.controller';
 import { FamilyBranchController } from './family-branch.controller';
 import { MarriageController } from './marriage.controller';
+import { GenealogyService } from './genealogy.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Member, Marriage, FamilyBranch])],
   controllers: [MemberController, FamilyBranchController, MarriageController],
-  providers: [MemberService, MarriageService],
-  exports: [MemberService, MarriageService],
+  providers: [MemberService, MarriageService, GenealogyService],
+  exports: [MemberService, MarriageService, GenealogyService],
 })
 export class MemberModule {}
