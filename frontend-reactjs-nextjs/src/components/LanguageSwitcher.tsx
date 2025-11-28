@@ -1,7 +1,7 @@
 'use client';
 
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Select } from '@/components/ui/select';
+import { CustomSelect } from '@/components/ui/custom-select';
 import { Globe } from 'lucide-react';
 
 export function LanguageSwitcher() {
@@ -10,14 +10,16 @@ export function LanguageSwitcher() {
     return (
         <div className="flex items-center gap-2">
             <Globe className="h-4 w-4 text-slate-500" />
-            <Select
+            <CustomSelect
                 value={locale}
-                onChange={(e) => setLocale(e.target.value as 'en' | 'vi')}
-                className="w-[120px] h-8 text-xs"
-            >
-                <option value="vi">Tiếng Việt</option>
-                <option value="en">English</option>
-            </Select>
+                onChange={(value) => setLocale(value as 'en' | 'vi')}
+                options={[
+                    { value: 'vi', label: 'Tiếng Việt' },
+                    { value: 'en', label: 'English' },
+                ]}
+                className="w-[130px]"
+                showSearch={false}
+            />
         </div>
     );
 }

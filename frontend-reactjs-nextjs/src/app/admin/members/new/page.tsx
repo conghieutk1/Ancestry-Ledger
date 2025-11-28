@@ -40,6 +40,9 @@ export default function NewMemberPage() {
     const [spouseId, setSpouseId] = useState('');
     const [branchId, setBranchId] = useState('');
     const [generationIndex, setGenerationIndex] = useState<number | null>(null);
+    const [visibility, setVisibility] = useState<Visibility>(
+        Visibility.MEMBERS_ONLY
+    );
     const formRef = useRef<HTMLFormElement>(null);
 
     const fetchData = async () => {
@@ -62,6 +65,7 @@ export default function NewMemberPage() {
             setSpouseId('');
             setBranchId('');
             setGenerationIndex(null);
+            setVisibility(Visibility.MEMBERS_ONLY);
 
             // Reset uncontrolled inputs
             formRef.current?.reset();
@@ -128,6 +132,7 @@ export default function NewMemberPage() {
         setSpouseId('');
         setBranchId('');
         setGenerationIndex(null);
+        setVisibility(Visibility.MEMBERS_ONLY);
     };
 
     const handleClearAdditionalInfo = () => {
@@ -253,7 +258,7 @@ export default function NewMemberPage() {
             generationIndex: generationIndex || undefined,
             bio: getStr('bio'),
             notes: getStr('notes'),
-            visibility: Visibility.MEMBERS_ONLY,
+            visibility: visibility,
         };
 
         try {
@@ -889,8 +894,10 @@ export default function NewMemberPage() {
                                         {t.common.visibility}
                                     </label>
                                     <CustomSelect
-                                        value={Visibility.MEMBERS_ONLY}
-                                        onChange={() => {}}
+                                        value={visibility}
+                                        onChange={(value) =>
+                                            setVisibility(value as Visibility)
+                                        }
                                         options={[
                                             {
                                                 value: Visibility.PUBLIC,

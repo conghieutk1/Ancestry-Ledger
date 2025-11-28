@@ -39,6 +39,9 @@ export const CustomSelect = React.forwardRef<HTMLDivElement, CustomSelectProps>(
         ref
     ) => {
         const triggerRef = useRef<HTMLButtonElement>(null);
+        const dropdownRef = useRef<HTMLDivElement | null>(null);
+        const optionsContainerRef = useRef<HTMLDivElement | null>(null);
+        const optionRefs = useRef<Record<string, HTMLDivElement | null>>({});
         const [isOpen, setIsOpen] = useState(false);
         const [searchTerm, setSearchTerm] = useState('');
         const [dropdownPosition, setDropdownPosition] = useState({
@@ -54,6 +57,18 @@ export const CustomSelect = React.forwardRef<HTMLDivElement, CustomSelectProps>(
               )
             : options;
 
+        const scrollToSelected = React.useCallback(() => {
+            const selectedEl = optionRefs.current[value];
+            const container = optionsContainerRef.current;
+            if (selectedEl && container) {
+                const containerHeight = container.clientHeight;
+                const elTop = selectedEl.offsetTop;
+                const elHeight = selectedEl.clientHeight;
+                const scrollTo = elTop - containerHeight / 2 + elHeight / 2;
+                container.scrollTop = Math.max(0, scrollTo);
+            }
+        }, [value]);
+
         const handleOpen = () => {
             if (disabled || isOpen) return;
 
@@ -66,6 +81,8 @@ export const CustomSelect = React.forwardRef<HTMLDivElement, CustomSelectProps>(
                 });
             }
             setIsOpen(true);
+            // run after render to ensure option elements exist
+            setTimeout(scrollToSelected, 0);
         };
 
         const handleClose = () => {
@@ -80,10 +97,16 @@ export const CustomSelect = React.forwardRef<HTMLDivElement, CustomSelectProps>(
 
         useEffect(() => {
             const handleClickOutside = (event: MouseEvent) => {
-                if (
+                const target = event.target as Node | null;
+                const clickedInsideTrigger =
                     triggerRef.current &&
-                    !triggerRef.current.contains(event.target as Node)
-                ) {
+                    target &&
+                    triggerRef.current.contains(target);
+                const clickedInsideDropdown =
+                    dropdownRef.current &&
+                    target &&
+                    dropdownRef.current.contains(target);
+                if (!clickedInsideTrigger && !clickedInsideDropdown) {
                     handleClose();
                 }
             };
@@ -96,6 +119,14 @@ export const CustomSelect = React.forwardRef<HTMLDivElement, CustomSelectProps>(
                 document.removeEventListener('mousedown', handleClickOutside);
             };
         }, [isOpen]);
+
+        // Scroll to selected whenever open state or filtered options change
+        useEffect(() => {
+            if (isOpen) {
+                const raf = requestAnimationFrame(scrollToSelected);
+                return () => cancelAnimationFrame(raf);
+            }
+        }, [isOpen, filteredOptions, scrollToSelected]);
 
         return (
             <div
@@ -128,6 +159,7 @@ export const CustomSelect = React.forwardRef<HTMLDivElement, CustomSelectProps>(
                                 onMouseDown={handleClose}
                             />
                             <div
+                                ref={dropdownRef}
                                 className="fixed rounded-md border border-slate-200 bg-white shadow-md animate-in fade-in-0 zoom-in-95"
                                 style={{
                                     zIndex: 99999,
@@ -151,7 +183,10 @@ export const CustomSelect = React.forwardRef<HTMLDivElement, CustomSelectProps>(
                                         />
                                     </div>
                                 )}
-                                <div className="max-h-[200px] overflow-y-auto p-1">
+                                <div
+                                    className="max-h-[200px] overflow-y-auto p-1"
+                                    ref={optionsContainerRef}
+                                >
                                     {filteredOptions.length === 0 ? (
                                         <div className="py-6 text-center text-sm text-slate-500">
                                             {emptyMessage}
@@ -165,6 +200,11 @@ export const CustomSelect = React.forwardRef<HTMLDivElement, CustomSelectProps>(
                                                     value === option.value &&
                                                         'bg-slate-100'
                                                 )}
+                                                ref={(el) => {
+                                                    optionRefs.current[
+                                                        option.value
+                                                    ] = el;
+                                                }}
                                                 onMouseDown={(e) => {
                                                     e.stopPropagation();
                                                     e.preventDefault();
