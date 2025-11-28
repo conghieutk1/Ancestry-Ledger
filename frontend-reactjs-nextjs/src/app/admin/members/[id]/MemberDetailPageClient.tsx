@@ -463,10 +463,10 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                         </div>
                         <div className="md:col-span-2 space-y-3">
                             <label className="text-sm font-medium text-slate-700">
-                                {t.common.dateOfBirth}
+                                {t.common.dateOfBirth}{' '}
+                                <span className="text-red-500">*</span>
                             </label>
                             <CustomDatePicker
-                                name="dateOfBirth"
                                 value={
                                     member.dateOfBirth
                                         ? member.dateOfBirth.split('T')[0]
@@ -564,7 +564,6 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                         {t.common.dateOfDeath}
                                     </label>
                                     <CustomDatePicker
-                                        name="dateOfDeath"
                                         value={
                                             member.dateOfDeath
                                                 ? member.dateOfDeath.split(

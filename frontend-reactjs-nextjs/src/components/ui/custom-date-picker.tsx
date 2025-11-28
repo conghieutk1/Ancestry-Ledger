@@ -69,8 +69,8 @@ export const CustomDatePicker = React.forwardRef<
 
         // Generate year options (current year ± 100 years) and clamp range
         const now = new Date().getFullYear();
-        const minYear = now - 100;
-        const maxYear = now + 10;
+        const minYear = now - 500;
+        const maxYear = now + 100;
 
         const yearOptions = React.useMemo(() => {
             const years: number[] = [];
