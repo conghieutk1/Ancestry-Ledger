@@ -8,8 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getBranches } from '@/lib/api';
 import { FamilyBranch } from '@/types';
 import { DashboardStatsSkeleton } from '@/components/ui/loading-skeletons';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function BranchesPage() {
+    const { t } = useLanguage();
     const [branches, setBranches] = useState<FamilyBranch[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -33,25 +35,19 @@ export default function BranchesPage() {
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-semibold text-slate-900">
-                        Family Branches
+                        {t.branches.title}
                     </h1>
                     <p className="text-sm text-slate-500">
-                        Manage different branches of the family tree.
+                        {t.branches.subtitle}
                     </p>
                 </div>
-                <Button asChild>
-                    <Link href="/admin/branches/new">
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add Branch
-                    </Link>
-                </Button>
             </div>
 
             {loading ? (
                 <DashboardStatsSkeleton />
             ) : branches.length === 0 ? (
                 <div className="text-center py-12 text-slate-500">
-                    No branches found. Create your first branch to get started.
+                    {t.branches.noBranches}
                 </div>
             ) : (
                 <div className="grid gap-6 md:grid-cols-3">
@@ -68,7 +64,7 @@ export default function BranchesPage() {
                                     {branch.memberCount || 0}
                                 </div>
                                 <p className="text-xs text-slate-500">
-                                    Members
+                                    {t.branches.members}
                                 </p>
                                 {branch.description && (
                                     <p className="mt-2 text-xs text-slate-500 line-clamp-2">
@@ -80,7 +76,7 @@ export default function BranchesPage() {
                                         <Link
                                             href={`/admin/branches/${branch.id}`}
                                         >
-                                            Edit
+                                            {t.common.edit}
                                         </Link>
                                     </Button>
                                 </div>

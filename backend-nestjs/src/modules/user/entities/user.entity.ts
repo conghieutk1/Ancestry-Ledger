@@ -33,6 +33,9 @@ export class User {
   @Column({ default: true })
   isActive: boolean;
 
+  @Column({ nullable: true })
+  currentHashedRefreshToken?: string;
+
   @OneToOne(() => Member, (member) => member.user, { nullable: true })
   member?: Member;
 

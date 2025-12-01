@@ -33,28 +33,19 @@ import {
     DialogClose,
 } from '@/components/ui/dialog';
 import { getMembers, getMemberChildren, getBranches } from '@/lib/api';
+import { formatToLunarDate, formatDate, getLunarYear } from '@/lib/utils';
 import { useCallback } from 'react';
 import { Member, Gender, FamilyBranch } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { TableRowsSkeleton } from '@/components/ui/loading-skeletons';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-
-// Helper function to format date to dd/mm/yyyy
-const formatDate = (dateString?: string) => {
-    if (!dateString) return '';
-    try {
-        const date = new Date(dateString);
-        // Check if date is valid
-        if (isNaN(date.getTime())) return '';
-        const day = date.getDate().toString().padStart(2, '0');
-        const month = (date.getMonth() + 1).toString().padStart(2, '0');
-        const year = date.getFullYear();
-        return `${day}/${month}/${year}`;
-    } catch {
-        return '';
-    }
-};
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 export default function MembersPage() {
     const { t } = useLanguage();
@@ -62,6 +53,7 @@ export default function MembersPage() {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(20);
     const [meta, setMeta] = useState<any>(null);
     const [childrenDialogOpen, setChildrenDialogOpen] = useState(false);
     const [selectedMember, setSelectedMember] = useState<Member | null>(null);
@@ -110,7 +102,7 @@ export default function MembersPage() {
         try {
             const params: Record<string, any> = {
                 page,
-                take: 50,
+                take: pageSize,
                 q: search || undefined,
             };
 
@@ -141,6 +133,7 @@ export default function MembersPage() {
         }
     }, [
         page,
+        pageSize,
         search,
         selectedBranch,
         selectedGender,
@@ -262,7 +255,7 @@ export default function MembersPage() {
                             ]}
                             placeholder={t.members.filters.allGenders}
                             showSearch={false}
-                            className="w-[160px]"
+                            className="w-40"
                         />
                         <CustomSelect
                             value={selectedStatus}
@@ -307,7 +300,7 @@ export default function MembersPage() {
                                 t.common.generationIndex || 'Generation'
                             }
                             searchPlaceholder={t.common.search}
-                            className="w-[160px]"
+                            className="w-40"
                         />
                         {hasActiveFilters && (
                             <Button
@@ -397,43 +390,40 @@ export default function MembersPage() {
                 <Table className="table-auto w-full">
                     <TableHeader>
                         <TableRow>
-                            <TableHead className="w-20"></TableHead>
-                            <TableHead className="whitespace-nowrap">
+                            <TableHead className="w-[60px] text-center"></TableHead>
+                            <TableHead className="whitespace-nowrap text-left w-[180px]">
                                 {t.members.table.member}
                             </TableHead>
-                            <TableHead className="whitespace-nowrap">
+                            <TableHead className="whitespace-nowrap text-left w-[200px]">
                                 {t.members.table.parents}
                             </TableHead>
-                            <TableHead className="whitespace-nowrap">
+                            <TableHead className="whitespace-nowrap text-left w-[200px]">
                                 {t.members.table.spouse}
                             </TableHead>
-                            <TableHead className="whitespace-nowrap">
+                            <TableHead className="whitespace-nowrap text-center w-[100px]">
                                 {t.members.table.children}
                             </TableHead>
-                            <TableHead className="whitespace-nowrap">
+                            <TableHead className="whitespace-nowrap text-center w-[120px]">
                                 {t.members.table.branch}
                             </TableHead>
-                            <TableHead className="whitespace-nowrap">
+                            <TableHead className="whitespace-nowrap text-center w-[100px]">
                                 {t.members.table.gender}
                             </TableHead>
-                            <TableHead className="whitespace-nowrap">
+                            <TableHead className="whitespace-nowrap text-center w-[120px]">
                                 {t.members.table.birthDate}
                             </TableHead>
-                            <TableHead className="whitespace-nowrap">
+                            <TableHead className="whitespace-nowrap text-center w-[120px]">
                                 {t.members.table.status}
-                            </TableHead>
-                            <TableHead className="text-right w-[100px] whitespace-nowrap">
-                                {t.common.actions}
                             </TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {loading ? (
-                            <TableRowsSkeleton columns={10} rows={10} />
+                            <TableRowsSkeleton columns={9} rows={10} />
                         ) : members.length === 0 ? (
                             <TableRow>
                                 <TableCell
-                                    colSpan={10}
+                                    colSpan={9}
                                     className="text-center py-8 text-slate-500"
                                 >
                                     {t.members.noProfile}
@@ -493,14 +483,14 @@ export default function MembersPage() {
                                     ? t.common.alive
                                     : t.common.deceased;
 
-                                // Format ngày mất (nếu có)
+                                // Format ngày mất (nếu có) - Chuyển sang âm lịch
                                 const deathDate = member.dateOfDeath
-                                    ? formatDate(member.dateOfDeath)
+                                    ? formatToLunarDate(member.dateOfDeath)
                                     : null;
 
                                 return (
                                     <TableRow key={member.id}>
-                                        <TableCell className="py-4">
+                                        <TableCell className="py-4 text-center">
                                             <Avatar className="h-12 w-12">
                                                 {member.avatarUrl && (
                                                     <AvatarImage
@@ -516,7 +506,7 @@ export default function MembersPage() {
                                                 </AvatarFallback>
                                             </Avatar>
                                         </TableCell>
-                                        <TableCell className="py-4">
+                                        <TableCell className="py-4 text-left">
                                             <div className="font-medium text-base">
                                                 <Link
                                                     href={`/admin/members/${member.id}`}
@@ -525,13 +515,15 @@ export default function MembersPage() {
                                                     {member.fullName}
                                                 </Link>
                                             </div>
-                                            {member.generation && (
+                                            {member.generationIndex !==
+                                                undefined && (
                                                 <div className="text-sm text-slate-500 mt-1">
-                                                    {member.generation}
+                                                    {t.common.generationPrefix}{' '}
+                                                    {member.generationIndex}
                                                 </div>
                                             )}
                                         </TableCell>
-                                        <TableCell className="text-sm py-4">
+                                        <TableCell className="text-sm py-4 text-left">
                                             <div>
                                                 <span className="text-slate-600">
                                                     {t.common.father}:
@@ -549,7 +541,7 @@ export default function MembersPage() {
                                                 </span>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="text-sm py-4">
+                                        <TableCell className="text-sm py-4 text-left">
                                             {isMarried ? (
                                                 <div>
                                                     <span className="font-medium">
@@ -566,7 +558,7 @@ export default function MembersPage() {
                                                 </span>
                                             )}
                                         </TableCell>
-                                        <TableCell className="text-sm py-4">
+                                        <TableCell className="text-sm py-4 text-center">
                                             {childrenCount > 0 ? (
                                                 <button
                                                     onClick={() =>
@@ -584,12 +576,12 @@ export default function MembersPage() {
                                                 </span>
                                             )}
                                         </TableCell>
-                                        <TableCell className="text-sm py-4">
+                                        <TableCell className="text-sm py-4 text-center">
                                             <span className="font-medium">
                                                 {branchText}
                                             </span>
                                         </TableCell>
-                                        <TableCell className="text-sm py-4">
+                                        <TableCell className="text-sm py-4 text-center">
                                             <Badge
                                                 variant="secondary"
                                                 className="font-normal"
@@ -597,49 +589,74 @@ export default function MembersPage() {
                                                 {getGenderText(member.gender)}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell className="text-sm py-4">
+                                        <TableCell className="text-sm py-4 text-center">
                                             <span className="font-medium">
                                                 {birthDateDisplay}
                                             </span>
                                         </TableCell>
-                                        <TableCell className="text-sm py-5">
+                                        <TableCell className="text-sm py-5 text-center">
                                             {member.isAlive ? (
-                                                <Badge
-                                                    variant="outline"
-                                                    className="border-green-200 bg-green-50 text-green-700 w-fit"
-                                                >
-                                                    {statusText}
-                                                </Badge>
-                                            ) : (
-                                                <div className="flex flex-col gap-1">
+                                                <div className="flex justify-center">
                                                     <Badge
-                                                        variant="secondary"
-                                                        className="w-fit whitespace-nowrap"
+                                                        variant="outline"
+                                                        className="border-green-200 bg-green-50 text-green-700 w-fit "
                                                     >
                                                         {statusText}
                                                     </Badge>
-                                                    {deathDate && (
-                                                        <div className="text-xs text-slate-600 mt-1 pl-1 block">
-                                                            {deathDate}
-                                                        </div>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col gap-1 items-center">
+                                                    <TooltipProvider
+                                                        delayDuration={0}
+                                                    >
+                                                        <Tooltip>
+                                                            <TooltipTrigger
+                                                                asChild
+                                                            >
+                                                                <Badge
+                                                                    variant="secondary"
+                                                                    className="w-fit whitespace-nowrap cursor-pointer"
+                                                                >
+                                                                    {statusText}
+                                                                </Badge>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <div className="text-xs">
+                                                                    <div>
+                                                                        {
+                                                                            t
+                                                                                .common
+                                                                                .solarDate
+                                                                        }
+                                                                        :{' '}
+                                                                        {formatDate(
+                                                                            member.dateOfDeath
+                                                                        )}
+                                                                    </div>
+                                                                    <div>
+                                                                        {
+                                                                            t
+                                                                                .common
+                                                                                .lunarDate
+                                                                        }
+                                                                        :{' '}
+                                                                        {
+                                                                            deathDate
+                                                                        }
+                                                                    </div>
+                                                                </div>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                    {member.dateOfDeath && (
+                                                        <span className="text-[11px] text-center text-slate-500 leading-none">
+                                                            {getLunarYear(
+                                                                member.dateOfDeath
+                                                            )}
+                                                        </span>
                                                     )}
                                                 </div>
                                             )}
-                                        </TableCell>
-                                        <TableCell className="text-right py-4">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    asChild
-                                                >
-                                                    <Link
-                                                        href={`/admin/members/${member.id}`}
-                                                    >
-                                                        {t.common.edit}
-                                                    </Link>
-                                                </Button>
-                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 );
@@ -652,9 +669,34 @@ export default function MembersPage() {
             {/* Pagination Controls */}
             {meta && (
                 <div className="flex items-center justify-between">
-                    <div className="text-sm text-slate-500">
-                        Page {meta.page} of {meta.pageCount} ({meta.itemCount}{' '}
-                        items)
+                    <div className="flex items-center gap-6">
+                        <div className="text-sm text-slate-500">
+                            {t.common.paginationInfo
+                                .replace('{page}', meta.page)
+                                .replace('{pageCount}', meta.pageCount)
+                                .replace('{itemCount}', meta.itemCount)}
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm text-slate-500">
+                                {t.common.rowsPerPage}:
+                            </span>
+                            <CustomSelect
+                                value={pageSize.toString()}
+                                onChange={(value) => {
+                                    setPageSize(Number(value));
+                                    setPage(1);
+                                }}
+                                options={[
+                                    { value: '10', label: '10' },
+                                    { value: '20', label: '20' },
+                                    { value: '50', label: '50' },
+                                    { value: '100', label: '100' },
+                                ]}
+                                placeholder="50"
+                                showSearch={false}
+                                className="w-[70px]"
+                            />
+                        </div>
                     </div>
                     <div className="flex items-center gap-2">
                         <Button
@@ -740,7 +782,7 @@ export default function MembersPage() {
                 open={childrenDialogOpen}
                 onOpenChange={setChildrenDialogOpen}
             >
-                <DialogContent>
+                <DialogContent className="sm:max-w-[600px] sm:w-[600px]">
                     <DialogClose onClose={() => setChildrenDialogOpen(false)} />
                     <DialogHeader>
                         <DialogTitle className="text-xl font-semibold text-slate-900 pr-8">
@@ -751,7 +793,7 @@ export default function MembersPage() {
                             {t.members.totalChildren}: {children.length}
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="mt-6">
+                    <div className="mt-6 h-[500px] flex flex-col">
                         {loadingChildren ? (
                             <div className="space-y-3">
                                 {Array.from({ length: 3 }).map((_, i) => (
@@ -771,7 +813,7 @@ export default function MembersPage() {
                                 ))}
                             </div>
                         ) : children.length === 0 ? (
-                            <div className="text-center py-12 text-slate-500">
+                            <div className="h-full flex flex-col items-center justify-center text-slate-500">
                                 <div className="text-lg mb-2">
                                     {t.members.noChildren}
                                 </div>
@@ -780,7 +822,7 @@ export default function MembersPage() {
                                 </div>
                             </div>
                         ) : (
-                            <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+                            <div className="space-y-3 h-full overflow-y-auto pr-2">
                                 {children.map((child) => (
                                     <div
                                         key={child.id}
@@ -814,9 +856,14 @@ export default function MembersPage() {
                                                 {child.fullName}
                                             </Link>
                                             <div className="text-sm text-slate-600 mt-2 space-x-3 flex flex-wrap items-center gap-2">
-                                                {child.generation && (
+                                                {child.generationIndex !==
+                                                    undefined && (
                                                     <span className="inline-flex items-center px-2 py-1 rounded-md bg-slate-100 text-slate-700 text-xs font-medium">
-                                                        {child.generation}
+                                                        {
+                                                            t.common
+                                                                .generationPrefix
+                                                        }{' '}
+                                                        {child.generationIndex}
                                                     </span>
                                                 )}
                                                 <Badge

@@ -19,3 +19,42 @@ export function formatDate(dateString?: string) {
         return '';
     }
 }
+import { Solar } from 'lunar-javascript';
+
+export function formatToLunarDate(dateString?: string) {
+    if (!dateString) return '';
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return '';
+
+        const solar = Solar.fromYmd(
+            date.getFullYear(),
+            date.getMonth() + 1,
+            date.getDate()
+        );
+        const lunar = solar.getLunar();
+
+        return `${lunar.getDay()}/${lunar.getMonth()}/${lunar.getYear()} (AL)`;
+    } catch {
+        return '';
+    }
+}
+
+export function getLunarYear(dateString?: string) {
+    if (!dateString) return '';
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return '';
+
+        const solar = Solar.fromYmd(
+            date.getFullYear(),
+            date.getMonth() + 1,
+            date.getDate()
+        );
+        const lunar = solar.getLunar();
+
+        return lunar.getYear().toString();
+    } catch {
+        return '';
+    }
+}

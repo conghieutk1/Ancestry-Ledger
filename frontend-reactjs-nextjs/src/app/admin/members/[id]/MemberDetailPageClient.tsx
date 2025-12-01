@@ -505,18 +505,27 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                 defaultValue={member.occupation || ''}
                             />
                         </div>
-                        {member.isAlive && (
-                            <div className="md:col-span-2 space-y-3">
-                                <label className="text-sm font-medium text-slate-700">
-                                    {t.common.phoneNumber}
-                                </label>
-                                <Input
-                                    name="phoneNumber"
-                                    defaultValue={member.phoneNumber || ''}
-                                    placeholder=""
-                                />
-                            </div>
-                        )}
+                        <div className="md:col-span-2 space-y-3">
+                            <label className="text-sm font-medium text-slate-700">
+                                {t.common.phoneNumber}
+                            </label>
+                            <Input
+                                name="phoneNumber"
+                                value={member.phoneNumber || ''}
+                                onChange={(e) => {
+                                    setMember((prev) =>
+                                        prev
+                                            ? {
+                                                  ...prev,
+                                                  phoneNumber: e.target.value,
+                                              }
+                                            : prev
+                                    );
+                                }}
+                                placeholder=""
+                                disabled={!member.isAlive}
+                            />
+                        </div>
                         <div className="md:col-span-2 space-y-3">
                             <label className="text-sm font-medium text-slate-700">
                                 {t.common.avatarUrl}
@@ -536,9 +545,13 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                 onChange={(value) => {
                                     setMember((prev) => {
                                         if (!prev) return prev;
+                                        const isAlive = value === 'alive';
                                         return {
                                             ...prev,
-                                            isAlive: value === 'alive',
+                                            isAlive,
+                                            phoneNumber: !isAlive
+                                                ? ''
+                                                : prev.phoneNumber,
                                         };
                                     });
                                 }}

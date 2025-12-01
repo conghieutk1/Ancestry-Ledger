@@ -7,9 +7,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { login } from '@/lib/api';
+import GuestGuard from '@/components/auth/guest-guard';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { dictionaries } from '@/lib/i18n/dictionaries';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 export default function LoginPage() {
     const router = useRouter();
+    const { locale } = useLanguage();
+    const dict = dictionaries[locale];
+
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -25,64 +32,83 @@ export default function LoginPage() {
             router.push('/admin');
         } catch (err: any) {
             console.error(err);
-            setError('Invalid email or password');
+            setError(dict.login.error);
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-            <Card className="w-full max-w-md">
-                <CardHeader className="text-center">
-                    <CardTitle className="text-2xl">Ancestry Ledger</CardTitle>
-                    <p className="text-sm text-slate-500">
-                        Sign in to your account
-                    </p>
-                </CardHeader>
-                <CardContent>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-700">
-                                Email
-                            </label>
-                            <Input
-                                type="email"
-                                placeholder="admin@example.com"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-700">
-                                Password
-                            </label>
-                            <Input
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                            />
-                        </div>
-                        {error && (
-                            <p className="text-sm text-red-500">{error}</p>
-                        )}
-                        <Button
-                            type="submit"
-                            className="w-full"
-                            disabled={loading}
-                        >
-                            {loading ? 'Signing in...' : 'Sign In'}
-                        </Button>
-                        <div className="text-center text-sm text-slate-500">
-                            <Link href="/" className="hover:underline">
-                                Back to Home
-                            </Link>
-                        </div>
-                    </form>
-                </CardContent>
-            </Card>
-        </div>
+        <GuestGuard>
+            <div className="relative flex min-h-screen items-center justify-center bg-slate-50 px-4">
+                <div className="absolute right-4 top-4">
+                    <LanguageSwitcher />
+                </div>
+                <Card className="w-full max-w-md">
+                    <CardHeader className="text-center">
+                        <CardTitle className="text-2xl">
+                            Ancestry Ledger
+                        </CardTitle>
+                        <p className="text-sm text-slate-500">
+                            {dict.login.title}
+                        </p>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-slate-700">
+                                    {dict.login.email}
+                                </label>
+                                <Input
+                                    type="email"
+                                    placeholder={dict.login.placeholderEmail}
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-slate-700">
+                                    {dict.login.password}
+                                </label>
+                                <Input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) =>
+                                        setPassword(e.target.value)
+                                    }
+                                    required
+                                />
+                            </div>
+                            <div className="flex justify-end">
+                                <Link
+                                    href="/forgot-password"
+                                    className="text-sm font-medium text-slate-500 transition-colors hover:text-blue-600"
+                                >
+                                    {dict.login.forgotPassword}
+                                </Link>
+                            </div>
+                            {error && (
+                                <p className="text-sm text-red-500">{error}</p>
+                            )}
+                            <Button
+                                type="submit"
+                                className="w-full"
+                                disabled={loading}
+                            >
+                                {loading
+                                    ? dict.login.signingIn
+                                    : dict.login.signIn}
+                            </Button>
+                            <div className="text-center text-sm text-slate-500">
+                                <Link href="/" className="hover:underline">
+                                    {dict.login.backToHome}
+                                </Link>
+                            </div>
+                        </form>
+                    </CardContent>
+                </Card>
+            </div>
+        </GuestGuard>
     );
 }

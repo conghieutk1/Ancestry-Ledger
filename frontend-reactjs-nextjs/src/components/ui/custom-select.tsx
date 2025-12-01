@@ -44,7 +44,12 @@ export const CustomSelect = React.forwardRef<HTMLDivElement, CustomSelectProps>(
         const optionRefs = useRef<Record<string, HTMLDivElement | null>>({});
         const [isOpen, setIsOpen] = useState(false);
         const [searchTerm, setSearchTerm] = useState('');
-        const [dropdownPosition, setDropdownPosition] = useState({
+        const [dropdownPosition, setDropdownPosition] = useState<{
+            top?: number | string;
+            bottom?: number | string;
+            left: number;
+            width: number;
+        }>({
             top: 0,
             left: 0,
             width: 0,
@@ -74,11 +79,25 @@ export const CustomSelect = React.forwardRef<HTMLDivElement, CustomSelectProps>(
 
             if (triggerRef.current) {
                 const rect = triggerRef.current.getBoundingClientRect();
-                setDropdownPosition({
-                    top: rect.bottom + 4,
+                const spaceBelow = window.innerHeight - rect.bottom;
+                const minHeightNeeded = 220; // Max height (200) + search/padding
+
+                let newPosition: any = {
                     left: rect.left,
                     width: rect.width,
-                });
+                };
+
+                if (spaceBelow < minHeightNeeded && rect.top > spaceBelow) {
+                    // Open upwards
+                    newPosition.bottom = window.innerHeight - rect.top + 4;
+                    newPosition.top = 'auto';
+                } else {
+                    // Open downwards
+                    newPosition.top = rect.bottom + 4;
+                    newPosition.bottom = 'auto';
+                }
+
+                setDropdownPosition(newPosition);
             }
             setIsOpen(true);
             // run after render to ensure option elements exist
@@ -164,6 +183,7 @@ export const CustomSelect = React.forwardRef<HTMLDivElement, CustomSelectProps>(
                                 style={{
                                     zIndex: 99999,
                                     top: dropdownPosition.top,
+                                    bottom: dropdownPosition.bottom,
                                     left: dropdownPosition.left,
                                     width: dropdownPosition.width,
                                 }}

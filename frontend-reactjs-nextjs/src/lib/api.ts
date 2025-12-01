@@ -30,14 +30,51 @@ api.interceptors.request.use(
 // Add a response interceptor to handle 401 errors (expired token)
 api.interceptors.response.use(
     (response) => response,
-    (error) => {
-        if (error.response?.status === 401) {
-            // Token expired or invalid - logout user
-            if (typeof window !== 'undefined') {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                // Redirect to login page
-                window.location.href = '/login';
+    async (error) => {
+        const originalRequest = error.config;
+        if (error.response?.status === 401 && !originalRequest._retry) {
+            originalRequest._retry = true;
+            const refreshToken =
+                typeof window !== 'undefined'
+                    ? localStorage.getItem('refresh_token')
+                    : null;
+
+            if (refreshToken) {
+                try {
+                    // Use axios directly to avoid infinite loop if api instance is used
+                    const response = await axios.post(
+                        `${API_URL}/auth/refresh`,
+                        {},
+                        {
+                            headers: {
+                                Authorization: `Bearer ${refreshToken}`,
+                            },
+                        }
+                    );
+
+                    const { access_token, refresh_token } = response.data;
+                    localStorage.setItem('token', access_token);
+                    if (refresh_token) {
+                        localStorage.setItem('refresh_token', refresh_token);
+                    }
+
+                    // Update header for future requests
+                    api.defaults.headers.common[
+                        'Authorization'
+                    ] = `Bearer ${access_token}`;
+                    // Update header for this request
+                    originalRequest.headers[
+                        'Authorization'
+                    ] = `Bearer ${access_token}`;
+
+                    return api(originalRequest);
+                } catch (refreshError) {
+                    // Refresh failed, logout
+                    logout();
+                    return Promise.reject(refreshError);
+                }
+            } else {
+                logout();
             }
         }
         return Promise.reject(error);
@@ -45,9 +82,11 @@ api.interceptors.response.use(
 );
 
 // Logout function
+// Logout function
 export const logout = () => {
     if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
+        localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');
         window.location.href = '/login';
     }
@@ -77,6 +116,12 @@ export const login = async (credentials: any) => {
         );
         if (response.data.access_token) {
             localStorage.setItem('token', response.data.access_token);
+            if (response.data.refresh_token) {
+                localStorage.setItem(
+                    'refresh_token',
+                    response.data.refresh_token
+                );
+            }
             localStorage.setItem('user', JSON.stringify(response.data.user));
         }
         return response.data;

@@ -67,6 +67,10 @@ export const dictionaries = {
                 membersOnly: 'Members Only',
                 private: 'Private',
             },
+            rowsPerPage: 'Rows per page',
+            paginationInfo: 'Page {page} of {pageCount} ({itemCount} items)',
+            solarDate: 'Solar Date',
+            lunarDate: 'Lunar Date',
         },
         members: {
             title: 'Members',
@@ -115,6 +119,13 @@ export const dictionaries = {
                 birthDate: 'Date of Birth',
                 status: 'Status',
             },
+        },
+        branches: {
+            title: 'Family Branches',
+            subtitle: 'Manage different branches of the family tree.',
+            noBranches:
+                'No branches found. Create your first branch to get started.',
+            members: 'Members',
         },
         form: {
             firstName: 'First Name',
@@ -188,6 +199,17 @@ export const dictionaries = {
             refreshSuccess: 'Data refreshed successfully',
             refreshError: 'Failed to refresh data',
         },
+        login: {
+            title: 'Sign in to your account',
+            email: 'Email',
+            password: 'Password',
+            signIn: 'Sign In',
+            signingIn: 'Signing in...',
+            backToHome: 'Back to Home',
+            error: 'Invalid email or password',
+            placeholderEmail: '',
+            forgotPassword: 'Forgot Password?',
+        },
     },
     vi: {
         common: {
@@ -255,6 +277,10 @@ export const dictionaries = {
                 membersOnly: 'Thành viên',
                 private: 'Riêng tư',
             },
+            rowsPerPage: 'Số hàng mỗi trang',
+            paginationInfo: 'Trang {page} trên {pageCount} ({itemCount} mục)',
+            solarDate: 'Dương lịch',
+            lunarDate: 'Âm lịch',
         },
         members: {
             title: 'Thành viên',
@@ -302,6 +328,13 @@ export const dictionaries = {
                 birthDate: 'Ngày sinh',
                 status: 'Trạng thái',
             },
+        },
+        branches: {
+            title: 'Chi/Nhánh Gia Đình',
+            subtitle: 'Quản lý các chi/nhánh khác nhau của cây gia phả.',
+            noBranches:
+                'Không tìm thấy chi/nhánh nào. Hãy tạo chi/nhánh đầu tiên để bắt đầu.',
+            members: 'Thành viên',
         },
         form: {
             firstName: 'Tên',
@@ -374,6 +407,17 @@ export const dictionaries = {
                 'Tạo thành viên thành công nhưng lỗi khi tạo kết hôn.',
             refreshSuccess: 'Dữ liệu đã được làm mới',
             refreshError: 'Lỗi khi tải dữ liệu',
+        },
+        login: {
+            title: 'Đăng nhập vào tài khoản của bạn',
+            email: 'Email',
+            password: 'Mật khẩu',
+            signIn: 'Đăng nhập',
+            signingIn: 'Đang đăng nhập...',
+            backToHome: 'Quay lại trang chủ',
+            error: 'Email hoặc mật khẩu không hợp lệ',
+            placeholderEmail: '',
+            forgotPassword: 'Quên mật khẩu?',
         },
     },
 };
