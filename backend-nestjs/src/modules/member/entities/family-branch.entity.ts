@@ -14,9 +14,6 @@ export class FamilyBranch {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
-  name: string;
-
   @Column({ type: 'text', nullable: true })
   description: string;
 

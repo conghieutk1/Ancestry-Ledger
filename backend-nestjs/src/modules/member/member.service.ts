@@ -174,20 +174,14 @@ export class MemberService {
           ? `Đời ${member.generationIndex}`
           : null;
 
-        // Format branch - prioritize branch.name, then format from branchOrder
+        // Format branch - format from branchOrder
         let branchDisplay = null;
         if (member.branch) {
-          // Always use branch.name if it exists and is not empty
-          if (member.branch.name && member.branch.name.trim() !== '') {
-            branchDisplay = member.branch.name;
-          } else {
-            // Otherwise, format from branchOrder
-            const branchOrder = member.branch.branchOrder || 1;
-            const isTrưởng = member.branch.isTrưởng;
-            branchDisplay = isTrưởng
-              ? `Chi ${branchOrder} (Trưởng)`
-              : `Chi ${branchOrder}`;
-          }
+          const branchOrder = member.branch.branchOrder || 1;
+          const isTrưởng = member.branch.isTrưởng;
+          branchDisplay = isTrưởng
+            ? `Chi ${branchOrder} (Trưởng)`
+            : `Chi ${branchOrder}`;
         }
 
         // Format birth year
@@ -255,7 +249,6 @@ export class MemberService {
         const nextOrder = (maxOrderBranch[0]?.branchOrder || 0) + 1;
 
         const newBranch = this.branchRepository.create({
-          name: `Chi ${nextOrder}`,
           description: `Chi thứ ${nextOrder} của dòng họ`,
           branchOrder: nextOrder,
         });

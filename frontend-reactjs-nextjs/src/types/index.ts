@@ -19,7 +19,7 @@ export enum Role {
 
 export interface FamilyBranch {
     id: string;
-    name: string;
+
     description?: string;
     memberCount?: number;
     branchOrder?: number;

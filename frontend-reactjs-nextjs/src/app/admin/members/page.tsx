@@ -231,7 +231,10 @@ export default function MembersPage() {
                                 },
                                 ...branches.map((branch) => ({
                                     value: branch.id,
-                                    label: branch.name,
+                                    label: t.common.branchNumber.replace(
+                                        '{number}',
+                                        branch.branchOrder?.toString() || '?'
+                                    ),
                                 })),
                             ]}
                             placeholder={t.members.filters.allBranches}
@@ -321,11 +324,12 @@ export default function MembersPage() {
                         {selectedBranch && (
                             <Badge variant="secondary" className="gap-1">
                                 {t.common.branch}:{' '}
-                                {
-                                    branches.find(
-                                        (b) => b.id === selectedBranch
-                                    )?.name
-                                }
+                                {t.common.branchNumber.replace(
+                                    '{number}',
+                                    branches
+                                        .find((b) => b.id === selectedBranch)
+                                        ?.branchOrder?.toString() || '?'
+                                )}
                                 <button
                                     onClick={() => setSelectedBranch('')}
                                     className="ml-1 hover:text-slate-900"
@@ -466,11 +470,12 @@ export default function MembersPage() {
                                         ? `${childrenCount} ${t.common.children.toLowerCase()}`
                                         : '-';
 
-                                // Format branch - prioritize branch.name from database
-                                const branchText =
-                                    member.branch?.name ||
-                                    member.branchDisplay ||
-                                    '-';
+                                const branchText = member.branch?.branchOrder
+                                    ? t.common.branchNumber.replace(
+                                          '{number}',
+                                          member.branch.branchOrder.toString()
+                                      )
+                                    : member.branchDisplay || '-';
 
                                 // Format ngày sinh
                                 const birthDate = formatDate(

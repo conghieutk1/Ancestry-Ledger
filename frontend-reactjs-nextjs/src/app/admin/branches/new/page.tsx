@@ -8,8 +8,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { createBranch } from '@/lib/api';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function NewBranchPage() {
+    const { t } = useLanguage();
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -21,7 +23,7 @@ export default function NewBranchPage() {
 
         const formData = new FormData(e.currentTarget);
         const data = {
-            name: formData.get('name') as string,
+            branchOrder: parseInt(formData.get('branchOrder') as string),
             description: formData.get('description') as string,
         };
 
@@ -69,11 +71,12 @@ export default function NewBranchPage() {
                         >
                             <div className="space-y-2 md:col-span-2">
                                 <label className="text-xs font-medium text-slate-700">
-                                    Branch Name
+                                    {t.common.branch} Order
                                 </label>
                                 <Input
-                                    name="name"
-                                    placeholder="e.g. Chi 1 (Trưởng)"
+                                    name="branchOrder"
+                                    type="number"
+                                    placeholder="1"
                                     required
                                 />
                             </div>

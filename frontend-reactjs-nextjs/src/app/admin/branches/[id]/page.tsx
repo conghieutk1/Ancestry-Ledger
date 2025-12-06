@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getBranch, updateBranch, deleteBranch } from '@/lib/api';
 import { FamilyBranch } from '@/types';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default async function BranchDetailPage({
     params,
@@ -20,6 +21,7 @@ export default async function BranchDetailPage({
 }
 
 function BranchDetailPageClient({ id }: { id: string }) {
+    const { t } = useLanguage();
     const router = useRouter();
     const [branch, setBranch] = useState<FamilyBranch | null>(null);
     const [loading, setLoading] = useState(true);
@@ -50,7 +52,7 @@ function BranchDetailPageClient({ id }: { id: string }) {
 
         const formData = new FormData(e.currentTarget);
         const data = {
-            name: formData.get('name') as string,
+            branchOrder: parseInt(formData.get('branchOrder') as string),
             description: formData.get('description') as string,
         };
 
@@ -125,11 +127,12 @@ function BranchDetailPageClient({ id }: { id: string }) {
                         >
                             <div className="space-y-2 md:col-span-2">
                                 <label className="text-xs font-medium text-slate-700">
-                                    Branch Name
+                                    {t.common.branch} Order
                                 </label>
                                 <Input
-                                    name="name"
-                                    defaultValue={branch.name}
+                                    name="branchOrder"
+                                    type="number"
+                                    defaultValue={branch.branchOrder}
                                     required
                                 />
                             </div>

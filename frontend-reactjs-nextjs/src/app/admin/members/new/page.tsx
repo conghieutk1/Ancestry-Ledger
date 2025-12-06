@@ -864,7 +864,10 @@ export default function NewMemberPage() {
                                         onChange={setBranchId}
                                         options={branches.map((b) => ({
                                             value: b.id,
-                                            label: b.name,
+                                            label: t.common.branchNumber.replace(
+                                                '{number}',
+                                                b.branchOrder?.toString() || '?'
+                                            ),
                                         }))}
                                         placeholder={t.common.autoSelect}
                                         searchPlaceholder={t.common.search}
@@ -877,14 +880,27 @@ export default function NewMemberPage() {
                                     <label className="text-sm font-medium text-slate-700">
                                         {t.common.generationIndex}
                                     </label>
-                                    <Input
+                                    <CustomSelect
                                         value={
                                             generationIndex
-                                                ? `${t.common.generationPrefix} ${generationIndex}`
+                                                ? generationIndex.toString()
                                                 : ''
                                         }
-                                        disabled
+                                        onChange={(val) =>
+                                            setGenerationIndex(
+                                                val ? parseInt(val) : null
+                                            )
+                                        }
+                                        options={Array.from(
+                                            { length: 50 },
+                                            (_, i) => i + 1
+                                        ).map((gen) => ({
+                                            value: gen.toString(),
+                                            label: `${t.common.generationPrefix} ${gen}`,
+                                        }))}
                                         placeholder={t.common.autoSelect}
+                                        searchPlaceholder={t.common.search}
+                                        disabled={members.length > 0}
                                         className="bg-slate-50"
                                     />
                                 </div>

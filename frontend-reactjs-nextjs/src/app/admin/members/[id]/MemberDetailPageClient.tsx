@@ -42,8 +42,9 @@ import {
     deleteMember,
     getMembers,
     createMarriage,
+    getBranches,
 } from '@/lib/api';
-import { Member, Gender, Visibility } from '@/types';
+import { Member, Gender, Visibility, FamilyBranch } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { MemberDetailSkeleton } from '@/components/ui/loading-skeletons';
 import { Textarea } from '@/components/ui/textarea';
@@ -76,6 +77,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
     const [motherId, setMotherId] = useState('');
     const [allMembers, setAllMembers] = useState<Member[]>([]);
     const [children, setChildren] = useState<Member[]>([]);
+    const [branches, setBranches] = useState<FamilyBranch[]>([]);
 
     // Dropdown Portal State
     const triggerRef = useRef<HTMLButtonElement>(null);
@@ -112,9 +114,19 @@ export function MemberDetailPageClient({ id }: { id: string }) {
         }
     };
 
+    const fetchBranches = async () => {
+        try {
+            const data = await getBranches();
+            setBranches(data);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
     useEffect(() => {
         fetchMember();
         fetchAllMembers();
+        fetchBranches();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
@@ -190,12 +202,11 @@ export function MemberDetailPageClient({ id }: { id: string }) {
             bio: formData.get('bio') as string,
             notes: formData.get('notes') as string,
             avatarUrl: formData.get('avatarUrl') as string,
-            generationIndex: formData.get('generationIndex')
-                ? parseInt(formData.get('generationIndex') as string)
-                : undefined,
+            generationIndex: member.generationIndex,
             visibility: member.visibility, // Use state value
             fatherId: fatherId || null,
             motherId: motherId || null,
+            branchId: member.branch?.id || null,
         };
 
         setPendingFormData(updates);
@@ -636,191 +647,183 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                             <label className="text-sm font-medium text-slate-700">
                                 {t.common.father}
                             </label>
-                            {hasChildren ||
-                            (member.gender === Gender.MALE &&
-                                marriages.length > 0) ? (
-                                <Input
-                                    value={
-                                        member.father
-                                            ? `${member.father.fullName} • ${
-                                                  member.father.dateOfBirth
-                                                      ? new Date(
-                                                            member.father.dateOfBirth
-                                                        ).getFullYear()
-                                                      : '?'
-                                              }`
-                                            : ''
-                                    }
-                                    disabled
-                                    placeholder={t.common.selectFather}
-                                    className="bg-slate-50"
-                                />
-                            ) : (
-                                <CustomSelect
-                                    value={fatherId}
-                                    onChange={(newFatherId) => {
-                                        setFatherId(newFatherId);
-                                        // Auto-select mother if father is married
-                                        if (newFatherId) {
-                                            const father = allMembers.find(
-                                                (m) => m.id === newFatherId
-                                            );
-                                            if (father) {
-                                                const activeMarriage =
-                                                    father.marriagesAsPartner1?.find(
-                                                        (m) => !m.endDate
-                                                    ) ||
-                                                    father.marriagesAsPartner2?.find(
-                                                        (m) => !m.endDate
-                                                    );
+                            <CustomSelect
+                                value={fatherId}
+                                onChange={(newFatherId) => {
+                                    setFatherId(newFatherId);
+                                    if (newFatherId) {
+                                        const father = allMembers.find(
+                                            (m) => m.id === newFatherId
+                                        );
+                                        if (father) {
+                                            // Auto-update Branch and Generation
+                                            setMember((prev) => {
+                                                if (!prev) return prev;
+                                                return {
+                                                    ...prev,
+                                                    branch:
+                                                        father.branch ||
+                                                        prev.branch,
+                                                    generationIndex:
+                                                        father.generationIndex
+                                                            ? father.generationIndex +
+                                                              1
+                                                            : prev.generationIndex,
+                                                };
+                                            });
 
-                                                if (activeMarriage) {
-                                                    const spouseId =
-                                                        activeMarriage.partner1
-                                                            .id === father.id
-                                                            ? activeMarriage
-                                                                  .partner2.id
-                                                            : activeMarriage
-                                                                  .partner1.id;
-                                                    setMotherId(spouseId);
-                                                }
+                                            // Auto-select mother if father is married
+                                            const activeMarriage =
+                                                father.marriagesAsPartner1?.find(
+                                                    (m) => !m.endDate
+                                                ) ||
+                                                father.marriagesAsPartner2?.find(
+                                                    (m) => !m.endDate
+                                                );
+
+                                            if (activeMarriage) {
+                                                const spouseId =
+                                                    activeMarriage.partner1
+                                                        .id === father.id
+                                                        ? activeMarriage
+                                                              .partner2.id
+                                                        : activeMarriage
+                                                              .partner1.id;
+                                                setMotherId(spouseId);
                                             }
                                         }
-                                    }}
-                                    options={allMembers
-                                        .filter((m) => {
-                                            // Must be Male and not self
-                                            if (
-                                                m.gender !== Gender.MALE ||
-                                                m.id === member.id
-                                            )
-                                                return false;
+                                    }
+                                }}
+                                options={allMembers
+                                    .filter((m) => {
+                                        // Must be Male and not self
+                                        if (
+                                            m.gender !== Gender.MALE ||
+                                            m.id === member.id
+                                        )
+                                            return false;
 
-                                            // Filter by age: Parent must be older
-                                            if (
-                                                !member.dateOfBirth ||
-                                                !m.dateOfBirth
-                                            )
-                                                return true;
+                                        // Filter by age: Parent must be older
+                                        if (
+                                            !member.dateOfBirth ||
+                                            !m.dateOfBirth
+                                        )
+                                            return true;
 
-                                            const memberYear = new Date(
-                                                member.dateOfBirth
-                                            ).getFullYear();
-                                            const parentYear = new Date(
-                                                m.dateOfBirth
-                                            ).getFullYear();
+                                        const memberYear = new Date(
+                                            member.dateOfBirth
+                                        ).getFullYear();
+                                        const parentYear = new Date(
+                                            m.dateOfBirth
+                                        ).getFullYear();
 
-                                            return parentYear < memberYear;
-                                        })
-                                        .map((m) => ({
-                                            value: m.id,
-                                            label: `${m.fullName} • ${
-                                                m.dateOfBirth
-                                                    ? new Date(
-                                                          m.dateOfBirth
-                                                      ).getFullYear()
-                                                    : '?'
-                                            }`,
-                                        }))}
-                                    placeholder={t.common.selectFather}
-                                    searchPlaceholder={t.common.search}
-                                />
-                            )}
+                                        return parentYear < memberYear;
+                                    })
+                                    .map((m) => ({
+                                        value: m.id,
+                                        label: `${m.fullName} • ${
+                                            m.dateOfBirth
+                                                ? new Date(
+                                                      m.dateOfBirth
+                                                  ).getFullYear()
+                                                : '?'
+                                        }`,
+                                    }))}
+                                placeholder={t.common.selectFather}
+                                searchPlaceholder={t.common.search}
+                                disabled={hasChildren}
+                            />
                         </div>
                         <div className="md:col-span-3 space-y-3">
                             <label className="text-sm font-medium text-slate-700">
                                 {t.common.mother}
                             </label>
-                            {hasChildren ||
-                            (member.gender === Gender.FEMALE &&
-                                marriages.length > 0) ? (
-                                <Input
-                                    value={
-                                        member.mother
-                                            ? `${member.mother.fullName} • ${
-                                                  member.mother.dateOfBirth
-                                                      ? new Date(
-                                                            member.mother.dateOfBirth
-                                                        ).getFullYear()
-                                                      : '?'
-                                              }`
-                                            : ''
-                                    }
-                                    disabled
-                                    placeholder={t.common.selectMother}
-                                    className="bg-slate-50"
-                                />
-                            ) : (
-                                <CustomSelect
-                                    value={motherId}
-                                    onChange={(newMotherId) => {
-                                        setMotherId(newMotherId);
-                                        // Auto-select father if mother is married
-                                        if (newMotherId) {
-                                            const mother = allMembers.find(
-                                                (m) => m.id === newMotherId
-                                            );
-                                            if (mother) {
-                                                const activeMarriage =
-                                                    mother.marriagesAsPartner1?.find(
-                                                        (m) => !m.endDate
-                                                    ) ||
-                                                    mother.marriagesAsPartner2?.find(
-                                                        (m) => !m.endDate
-                                                    );
+                            <CustomSelect
+                                value={motherId}
+                                onChange={(newMotherId) => {
+                                    setMotherId(newMotherId);
+                                    if (newMotherId) {
+                                        const mother = allMembers.find(
+                                            (m) => m.id === newMotherId
+                                        );
+                                        if (mother) {
+                                            // Auto-update Branch and Generation
+                                            setMember((prev) => {
+                                                if (!prev) return prev;
+                                                return {
+                                                    ...prev,
+                                                    branch:
+                                                        mother.branch ||
+                                                        prev.branch,
+                                                    generationIndex:
+                                                        mother.generationIndex
+                                                            ? mother.generationIndex +
+                                                              1
+                                                            : prev.generationIndex,
+                                                };
+                                            });
 
-                                                if (activeMarriage) {
-                                                    const spouseId =
-                                                        activeMarriage.partner1
-                                                            .id === mother.id
-                                                            ? activeMarriage
-                                                                  .partner2.id
-                                                            : activeMarriage
-                                                                  .partner1.id;
-                                                    setFatherId(spouseId);
-                                                }
+                                            // Auto-select father if mother is married
+                                            const activeMarriage =
+                                                mother.marriagesAsPartner1?.find(
+                                                    (m) => !m.endDate
+                                                ) ||
+                                                mother.marriagesAsPartner2?.find(
+                                                    (m) => !m.endDate
+                                                );
+
+                                            if (activeMarriage) {
+                                                const spouseId =
+                                                    activeMarriage.partner1
+                                                        .id === mother.id
+                                                        ? activeMarriage
+                                                              .partner2.id
+                                                        : activeMarriage
+                                                              .partner1.id;
+                                                setFatherId(spouseId);
                                             }
                                         }
-                                    }}
-                                    options={allMembers
-                                        .filter((m) => {
-                                            // Must be Female and not self
-                                            if (
-                                                m.gender !== Gender.FEMALE ||
-                                                m.id === member.id
-                                            )
-                                                return false;
+                                    }
+                                }}
+                                options={allMembers
+                                    .filter((m) => {
+                                        // Must be Female and not self
+                                        if (
+                                            m.gender !== Gender.FEMALE ||
+                                            m.id === member.id
+                                        )
+                                            return false;
 
-                                            // Filter by age: Parent must be older
-                                            if (
-                                                !member.dateOfBirth ||
-                                                !m.dateOfBirth
-                                            )
-                                                return true;
+                                        // Filter by age: Parent must be older
+                                        if (
+                                            !member.dateOfBirth ||
+                                            !m.dateOfBirth
+                                        )
+                                            return true;
 
-                                            const memberYear = new Date(
-                                                member.dateOfBirth
-                                            ).getFullYear();
-                                            const parentYear = new Date(
-                                                m.dateOfBirth
-                                            ).getFullYear();
+                                        const memberYear = new Date(
+                                            member.dateOfBirth
+                                        ).getFullYear();
+                                        const parentYear = new Date(
+                                            m.dateOfBirth
+                                        ).getFullYear();
 
-                                            return parentYear < memberYear;
-                                        })
-                                        .map((m) => ({
-                                            value: m.id,
-                                            label: `${m.fullName} • ${
-                                                m.dateOfBirth
-                                                    ? new Date(
-                                                          m.dateOfBirth
-                                                      ).getFullYear()
-                                                    : '?'
-                                            }`,
-                                        }))}
-                                    placeholder={t.common.selectMother}
-                                    searchPlaceholder={t.common.search}
-                                />
-                            )}
+                                        return parentYear < memberYear;
+                                    })
+                                    .map((m) => ({
+                                        value: m.id,
+                                        label: `${m.fullName} • ${
+                                            m.dateOfBirth
+                                                ? new Date(
+                                                      m.dateOfBirth
+                                                  ).getFullYear()
+                                                : '?'
+                                        }`,
+                                    }))}
+                                placeholder={t.common.selectMother}
+                                searchPlaceholder={t.common.search}
+                                disabled={hasChildren}
+                            />
                         </div>
 
                         {/* Spouse Selection - Visual Only for now as Marital Status card handles logic */}
@@ -871,11 +874,31 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                             <label className="text-sm font-medium text-slate-700">
                                 {t.common.branch}
                             </label>
-                            <Input
-                                value={member.branch?.name || ''}
-                                disabled
+                            <CustomSelect
+                                value={member.branch?.id || ''}
+                                onChange={(value) => {
+                                    const selectedBranch = branches.find(
+                                        (b) => b.id === value
+                                    );
+                                    setMember((prev) => {
+                                        if (!prev) return prev;
+                                        return {
+                                            ...prev,
+                                            branch: selectedBranch,
+                                        };
+                                    });
+                                }}
+                                options={branches.map((b) => ({
+                                    value: b.id,
+                                    label: t.common.branchNumber.replace(
+                                        '{number}',
+                                        b.branchOrder?.toString() || '?'
+                                    ),
+                                }))}
                                 placeholder={t.common.autoSelect}
+                                searchPlaceholder={t.common.search}
                                 className="bg-slate-50"
+                                disabled
                             />
                         </div>
 
@@ -883,16 +906,34 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                             <label className="text-sm font-medium text-slate-700">
                                 {t.common.generationIndex}
                             </label>
-                            <Input
-                                name="generationIndex"
-                                type="text"
-                                defaultValue={
+                            <CustomSelect
+                                value={
                                     member.generationIndex
-                                        ? `${t.common.generationPrefix} ${member.generationIndex}`
+                                        ? member.generationIndex.toString()
                                         : ''
                                 }
-                                disabled
+                                onChange={(val) => {
+                                    setMember((prev) => {
+                                        if (!prev) return prev;
+                                        return {
+                                            ...prev,
+                                            generationIndex: val
+                                                ? parseInt(val)
+                                                : undefined,
+                                        };
+                                    });
+                                }}
+                                options={Array.from(
+                                    { length: 50 },
+                                    (_, i) => i + 1
+                                ).map((gen) => ({
+                                    value: gen.toString(),
+                                    label: `${t.common.generationPrefix} ${gen}`,
+                                }))}
+                                placeholder={t.common.autoSelect}
+                                searchPlaceholder={t.common.search}
                                 className="bg-slate-50"
+                                disabled
                             />
                         </div>
 
