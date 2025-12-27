@@ -234,10 +234,7 @@ export class MarriageService {
       return null as any;
     }
 
-    if (
-      status === MarriageStatus.DIVORCED ||
-      status === MarriageStatus.WIDOWED
-    ) {
+    if (status === MarriageStatus.DIVORCED) {
       if (finalP2) {
         const activeMarriages = getActiveMarriages(finalP1);
         const targetMarriage = activeMarriages.find(
@@ -253,15 +250,36 @@ export class MarriageService {
       }
     }
 
+    if (status === MarriageStatus.WIDOWED) {
+      if (finalP2) {
+        const activeMarriages = getActiveMarriages(finalP1);
+        const targetMarriage = activeMarriages.find(
+          (m) => m.partner1.id === finalP1.id && m.partner2?.id === finalP2.id,
+        );
+
+        if (targetMarriage) {
+          targetMarriage.status = status as MarriageStatus;
+          // For WIDOWED, we do NOT set endDate, so it remains "active" in the frontend
+          // and the status is displayed as WIDOWED.
+          targetMarriage.endDate = null;
+          if (rest.notes) targetMarriage.notes = rest.notes;
+          return this.marriageRepository.save(targetMarriage);
+        }
+      }
+    }
+
     if (status === MarriageStatus.MARRIED) {
       const activeMarriagesP1 = getActiveMarriages(finalP1);
       const activeMarriagesP2 = finalP2 ? getActiveMarriages(finalP2) : [];
-
       const allActive = new Set([...activeMarriagesP1, ...activeMarriagesP2]);
 
       for (const m of allActive) {
-        m.endDate = date;
-        await this.marriageRepository.save(m);
+        // If the previous status was WIDOWED, we close it because they are now Remarrying.
+        // If the previous status was MARRIED, we keep it (Concurrent/Vợ 2).
+        if (m.status === MarriageStatus.WIDOWED) {
+          m.endDate = date;
+          await this.marriageRepository.save(m);
+        }
       }
     }
 
