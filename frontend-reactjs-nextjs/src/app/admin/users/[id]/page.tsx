@@ -83,7 +83,9 @@ function UserDetailPageClient({ id }: { id: string }) {
     if (loading) return <div className="p-6 text-center">Loading...</div>;
     if (!user)
         return (
-            <div className="p-6 text-center text-red-500">User not found</div>
+            <div className="p-6 text-center text-destructive">
+                User not found
+            </div>
         );
 
     return (
@@ -96,10 +98,12 @@ function UserDetailPageClient({ id }: { id: string }) {
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-2xl font-semibold text-slate-900">
+                        <h1 className="text-2xl font-semibold text-foreground">
                             Edit User
                         </h1>
-                        <p className="text-sm text-slate-500">ID: {user.id}</p>
+                        <p className="text-sm text-muted-foreground">
+                            ID: {user.id}
+                        </p>
                     </div>
                 </div>
                 <Button
@@ -123,7 +127,7 @@ function UserDetailPageClient({ id }: { id: string }) {
                             className="grid gap-4 md:grid-cols-2"
                         >
                             <div className="space-y-2">
-                                <label className="text-xs font-medium text-slate-700">
+                                <label className="text-xs font-medium text-foreground">
                                     Email
                                 </label>
                                 <Input
@@ -134,7 +138,7 @@ function UserDetailPageClient({ id }: { id: string }) {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-xs font-medium text-slate-700">
+                                <label className="text-xs font-medium text-foreground">
                                     Display Name
                                 </label>
                                 <Input
@@ -144,12 +148,12 @@ function UserDetailPageClient({ id }: { id: string }) {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-xs font-medium text-slate-700">
+                                <label className="text-xs font-medium text-foreground">
                                     Role
                                 </label>
                                 <select
                                     name="role"
-                                    className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-100 focus-visible:border-blue-300"
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-input"
                                     defaultValue={user.role}
                                     required
                                 >
@@ -162,7 +166,7 @@ function UserDetailPageClient({ id }: { id: string }) {
                             </div>
 
                             {error && (
-                                <div className="col-span-2 text-sm text-red-500">
+                                <div className="col-span-2 text-sm text-destructive">
                                     {error}
                                 </div>
                             )}

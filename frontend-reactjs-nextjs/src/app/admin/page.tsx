@@ -33,10 +33,12 @@ export default function AdminDashboard() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-2xl font-semibold text-slate-900">
+                <h1 className="text-2xl font-semibold text-foreground">
                     {t.dashboard.title}
                 </h1>
-                <p className="text-sm text-slate-500">{t.dashboard.subtitle}</p>
+                <p className="text-sm text-muted-foreground">
+                    {t.dashboard.subtitle}
+                </p>
             </div>
 
             {loading ? (
@@ -48,13 +50,13 @@ export default function AdminDashboard() {
                             <CardTitle className="text-sm font-medium">
                                 {t.dashboard.totalMembers}
                             </CardTitle>
-                            <Users className="h-4 w-4 text-slate-500" />
+                            <Users className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">
                                 {stats.totalMembers}
                             </div>
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-muted-foreground">
                                 {t.dashboard.registeredMembers}
                             </p>
                         </CardContent>
@@ -64,13 +66,13 @@ export default function AdminDashboard() {
                             <CardTitle className="text-sm font-medium">
                                 {t.dashboard.totalBranches}
                             </CardTitle>
-                            <GitBranch className="h-4 w-4 text-slate-500" />
+                            <GitBranch className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">
                                 {stats.totalBranches}
                             </div>
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-muted-foreground">
                                 {t.dashboard.activeBranches}
                             </p>
                         </CardContent>
@@ -80,13 +82,13 @@ export default function AdminDashboard() {
                             <CardTitle className="text-sm font-medium">
                                 {t.dashboard.totalUsers}
                             </CardTitle>
-                            <UserCog className="h-4 w-4 text-slate-500" />
+                            <UserCog className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">
                                 {stats.totalUsers}
                             </div>
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-muted-foreground">
                                 {t.dashboard.adminsAndMembers}
                             </p>
                         </CardContent>
@@ -100,7 +102,7 @@ export default function AdminDashboard() {
                         <CardTitle>{t.dashboard.recentActivity}</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-sm text-slate-500">
+                        <p className="text-sm text-muted-foreground">
                             {t.dashboard.noActivity}
                         </p>
                     </CardContent>
@@ -110,7 +112,7 @@ export default function AdminDashboard() {
                         <CardTitle>{t.dashboard.quickActions}</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-sm text-slate-500">
+                        <p className="text-sm text-muted-foreground">
                             {t.dashboard.shortcuts}
                         </p>
                     </CardContent>

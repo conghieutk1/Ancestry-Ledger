@@ -70,11 +70,11 @@ export function Sidebar() {
     return (
         <div
             className={cn(
-                'flex h-screen flex-col border-r border-slate-200 bg-slate-50 transition-all duration-300',
+                'flex h-screen flex-col border-r border-sidebar-border bg-sidebar transition-all duration-300',
                 isCollapsed ? 'w-16' : 'w-60'
             )}
         >
-            <div className="flex h-14 items-center justify-between border-b border-slate-200 px-4 gap-2">
+            <div className="flex h-14 items-center justify-between border-b border-sidebar-border px-4 gap-2">
                 {!isCollapsed && (
                     <Link
                         href="/admin"
@@ -84,7 +84,7 @@ export function Sidebar() {
                     </Link>
                 )}
                 <button
-                    className="inline-flex items-center justify-center h-8 w-8 rounded hover:bg-slate-200 transition-colors text-slate-600"
+                    className="inline-flex items-center justify-center h-8 w-8 rounded hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors text-sidebar-foreground/70"
                     onClick={() => setIsCollapsed(!isCollapsed)}
                 >
                     {isCollapsed ? (
@@ -103,13 +103,15 @@ export function Sidebar() {
                             <Link
                                 key={index}
                                 href={item.href}
-                                className={cn(
-                                    'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                                    isCollapsed && 'justify-center px-2',
-                                    isActive
-                                        ? 'bg-slate-200 text-slate-900'
-                                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                                )}
+                                className={
+                                    cn(
+                                        'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                                        isCollapsed && 'justify-center px-2',
+                                        isActive
+                                            ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                                            : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                                    ) as string
+                                }
                                 title={isCollapsed ? item.title : undefined}
                             >
                                 <Icon className="h-4 w-4 flex-shrink-0" />
@@ -119,22 +121,22 @@ export function Sidebar() {
                     })}
                 </nav>
             </div>
-            <div className="border-t border-slate-200 p-4 space-y-3">
+            <div className="border-t border-sidebar-border p-4 space-y-3">
                 <div
                     className={cn(
                         'flex items-center gap-3',
                         isCollapsed && 'flex-col'
                     )}
                 >
-                    <div className="h-8 w-8 rounded-full bg-slate-300 flex items-center justify-center flex-shrink-0 text-sm font-semibold text-slate-700">
+                    <div className="h-8 w-8 rounded-full bg-sidebar-accent flex items-center justify-center flex-shrink-0 text-sm font-semibold text-sidebar-accent-foreground">
                         {user?.displayName?.charAt(0).toUpperCase() || 'U'}
                     </div>
                     {!isCollapsed && (
                         <div className="text-sm flex-1 min-w-0">
-                            <p className="font-medium text-slate-900 truncate">
+                            <p className="font-medium text-sidebar-foreground truncate">
                                 {user?.displayName || 'User'}
                             </p>
-                            <p className="text-xs text-slate-500 truncate">
+                            <p className="text-xs text-sidebar-foreground/70 truncate">
                                 {user?.email || 'user@example.com'}
                             </p>
                         </div>
@@ -142,7 +144,7 @@ export function Sidebar() {
                 </div>
                 <button
                     className={cn(
-                        'inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors border border-slate-200 bg-white hover:bg-slate-50 text-slate-600',
+                        'inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors border border-sidebar-border bg-sidebar hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sidebar-foreground/70',
                         isCollapsed ? 'w-full h-9' : 'w-full'
                     )}
                     onClick={logout}

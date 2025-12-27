@@ -187,10 +187,10 @@ export default function MembersPage() {
         <div className="space-y-6 w-full">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-semibold text-slate-900">
+                    <h1 className="text-2xl font-semibold text-foreground">
                         {t.members.title}
                     </h1>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-muted-foreground">
                         {t.members.subtitle}
                     </p>
                 </div>
@@ -206,7 +206,7 @@ export default function MembersPage() {
             <div className="space-y-4">
                 <div className="flex items-center gap-4 flex-wrap">
                     <div className="relative flex-1 md:max-w-sm">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
                             placeholder={t.common.search + '...'}
                             className="pl-9"
@@ -319,7 +319,7 @@ export default function MembersPage() {
                     </div>
                 </div>
                 {hasActiveFilters && (
-                    <div className="flex items-center gap-2 flex-wrap text-sm text-slate-600">
+                    <div className="flex items-center gap-2 flex-wrap text-sm text-muted-foreground">
                         <span>{t.members.filters.activeFilters}:</span>
                         {selectedBranch && (
                             <Badge variant="secondary" className="gap-1">
@@ -332,7 +332,7 @@ export default function MembersPage() {
                                 )}
                                 <button
                                     onClick={() => setSelectedBranch('')}
-                                    className="ml-1 hover:text-slate-900"
+                                    className="ml-1 hover:text-foreground"
                                 >
                                     <X className="h-3 w-3" />
                                 </button>
@@ -344,7 +344,7 @@ export default function MembersPage() {
                                 {getGenderText(selectedGender)}
                                 <button
                                     onClick={() => setSelectedGender('')}
-                                    className="ml-1 hover:text-slate-900"
+                                    className="ml-1 hover:text-foreground"
                                 >
                                     <X className="h-3 w-3" />
                                 </button>
@@ -390,7 +390,7 @@ export default function MembersPage() {
                 )}
             </div>
 
-            <div className="rounded-md border border-slate-200 bg-white overflow-x-auto w-full">
+            <div className="rounded-md border border-border bg-background overflow-x-auto w-full">
                 <Table className="table-auto w-full">
                     <TableHeader>
                         <TableRow>
@@ -428,7 +428,7 @@ export default function MembersPage() {
                             <TableRow>
                                 <TableCell
                                     colSpan={9}
-                                    className="text-center py-8 text-slate-500"
+                                    className="text-center py-8 text-muted-foreground"
                                 >
                                     {t.members.noProfile}
                                 </TableCell>
@@ -522,7 +522,7 @@ export default function MembersPage() {
                                             </div>
                                             {member.generationIndex !==
                                                 undefined && (
-                                                <div className="text-sm text-slate-500 mt-1">
+                                                <div className="text-sm text-muted-foreground mt-1">
                                                     {t.common.generationPrefix}{' '}
                                                     {member.generationIndex}
                                                 </div>
@@ -530,7 +530,7 @@ export default function MembersPage() {
                                         </TableCell>
                                         <TableCell className="text-sm py-4 text-left">
                                             <div>
-                                                <span className="text-slate-600">
+                                                <span className="text-muted-foreground">
                                                     {t.common.father}:
                                                 </span>{' '}
                                                 <span className="font-medium">
@@ -538,7 +538,7 @@ export default function MembersPage() {
                                                 </span>
                                             </div>
                                             <div className="mt-1">
-                                                <span className="text-slate-600">
+                                                <span className="text-muted-foreground">
                                                     {t.common.mother}:
                                                 </span>{' '}
                                                 <span className="font-medium">
@@ -558,7 +558,7 @@ export default function MembersPage() {
                                                     </span>
                                                 </div>
                                             ) : (
-                                                <span className="text-slate-500">
+                                                <span className="text-muted-foreground">
                                                     {t.common.single}
                                                 </span>
                                             )}
@@ -571,7 +571,7 @@ export default function MembersPage() {
                                                             member
                                                         )
                                                     }
-                                                    className="font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                                                    className="font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline cursor-pointer"
                                                 >
                                                     {childrenText}
                                                 </button>
@@ -604,7 +604,7 @@ export default function MembersPage() {
                                                 <div className="flex justify-center">
                                                     <Badge
                                                         variant="outline"
-                                                        className="border-green-200 bg-green-50 text-green-700 w-fit "
+                                                        className="border-green-200 bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800 w-fit "
                                                     >
                                                         {statusText}
                                                     </Badge>
@@ -654,7 +654,7 @@ export default function MembersPage() {
                                                         </Tooltip>
                                                     </TooltipProvider>
                                                     {member.dateOfDeath && (
-                                                        <span className="text-[11px] text-center text-slate-500 leading-none">
+                                                        <span className="text-[11px] text-center text-muted-foreground leading-none">
                                                             {getLunarYear(
                                                                 member.dateOfDeath
                                                             )}
@@ -675,14 +675,14 @@ export default function MembersPage() {
             {meta && (
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-6">
-                        <div className="text-sm text-slate-500">
+                        <div className="text-sm text-muted-foreground">
                             {t.common.paginationInfo
                                 .replace('{page}', meta.page)
                                 .replace('{pageCount}', meta.pageCount)
                                 .replace('{itemCount}', meta.itemCount)}
                         </div>
                         <div className="flex items-center gap-2">
-                            <span className="text-sm text-slate-500">
+                            <span className="text-sm text-muted-foreground">
                                 {t.common.rowsPerPage}:
                             </span>
                             <CustomSelect
@@ -790,11 +790,11 @@ export default function MembersPage() {
                 <DialogContent className="sm:max-w-[600px] sm:w-[600px]">
                     <DialogClose onClose={() => setChildrenDialogOpen(false)} />
                     <DialogHeader>
-                        <DialogTitle className="text-xl font-semibold text-slate-900 pr-8">
+                        <DialogTitle className="text-xl font-semibold text-foreground pr-8">
                             {t.members.childrenList} -{' '}
                             {selectedMember?.fullName}
                         </DialogTitle>
-                        <DialogDescription className="text-base font-medium text-slate-600">
+                        <DialogDescription className="text-base font-medium text-muted-foreground">
                             {t.members.totalChildren}: {children.length}
                         </DialogDescription>
                     </DialogHeader>
@@ -804,7 +804,7 @@ export default function MembersPage() {
                                 {Array.from({ length: 3 }).map((_, i) => (
                                     <div
                                         key={i}
-                                        className="flex items-start gap-4 p-4 border border-slate-200 rounded-lg"
+                                        className="flex items-start gap-4 p-4 border border-border rounded-lg"
                                     >
                                         <Skeleton className="h-12 w-12 shrink-0 rounded-full" />
                                         <div className="flex-1">
@@ -818,7 +818,7 @@ export default function MembersPage() {
                                 ))}
                             </div>
                         ) : children.length === 0 ? (
-                            <div className="h-full flex flex-col items-center justify-center text-slate-500">
+                            <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
                                 <div className="text-lg mb-2">
                                     {t.members.noChildren}
                                 </div>
@@ -831,7 +831,7 @@ export default function MembersPage() {
                                 {children.map((child) => (
                                     <div
                                         key={child.id}
-                                        className="flex items-start gap-4 p-4 border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-colors cursor-pointer group"
+                                        className="flex items-start gap-4 p-4 border border-border rounded-lg hover:bg-accent/50 hover:border-accent-foreground/20 transition-colors cursor-pointer group"
                                         onClick={() => {
                                             window.location.href = `/admin/members/${child.id}`;
                                         }}
@@ -843,7 +843,7 @@ export default function MembersPage() {
                                                     alt={child.fullName}
                                                 />
                                             )}
-                                            <AvatarFallback className="bg-slate-100 text-slate-600">
+                                            <AvatarFallback className="bg-muted text-muted-foreground">
                                                 {child.firstName[0]}
                                                 {child.lastName
                                                     ? child.lastName[0]
@@ -853,17 +853,17 @@ export default function MembersPage() {
                                         <div className="flex-1 min-w-0">
                                             <Link
                                                 href={`/admin/members/${child.id}`}
-                                                className="font-semibold text-slate-900 hover:text-blue-600 hover:underline block"
+                                                className="font-semibold text-foreground hover:text-blue-600 dark:hover:text-blue-400 hover:underline block"
                                                 onClick={(e) =>
                                                     e.stopPropagation()
                                                 }
                                             >
                                                 {child.fullName}
                                             </Link>
-                                            <div className="text-sm text-slate-600 mt-2 space-x-3 flex flex-wrap items-center gap-2">
+                                            <div className="text-sm text-muted-foreground mt-2 space-x-3 flex flex-wrap items-center gap-2">
                                                 {child.generationIndex !==
                                                     undefined && (
-                                                    <span className="inline-flex items-center px-2 py-1 rounded-md bg-slate-100 text-slate-700 text-xs font-medium">
+                                                    <span className="inline-flex items-center px-2 py-1 rounded-md bg-muted text-muted-foreground text-xs font-medium">
                                                         {
                                                             t.common
                                                                 .generationPrefix
@@ -880,7 +880,7 @@ export default function MembersPage() {
                                                     )}
                                                 </Badge>
                                                 {child.dateOfBirth && (
-                                                    <span className="text-slate-500">
+                                                    <span className="text-muted-foreground">
                                                         {t.common.dateOfBirth}:{' '}
                                                         {formatDate(
                                                             child.dateOfBirth
@@ -893,7 +893,7 @@ export default function MembersPage() {
                                             {child.isAlive ? (
                                                 <Badge
                                                     variant="outline"
-                                                    className="border-green-200 bg-green-50 text-green-700"
+                                                    className="border-green-200 bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800"
                                                 >
                                                     {t.common.alive}
                                                 </Badge>

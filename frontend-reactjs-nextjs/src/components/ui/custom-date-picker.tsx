@@ -158,7 +158,7 @@ export const CustomDatePicker = React.forwardRef<
                             disabled={disabled}
                             className={cn(
                                 'w-full justify-start text-left font-normal',
-                                !date && 'text-slate-500'
+                                !date && 'text-muted-foreground'
                                 // Remove any width classes from className to avoid conflicts if needed,
                                 // but usually className overrides.
                                 // We keep className at the end.
@@ -178,7 +178,7 @@ export const CustomDatePicker = React.forwardRef<
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
                         {/* Year/Month Selector */}
-                        <div className="flex gap-2 p-3 border-b border-slate-200">
+                        <div className="flex gap-2 p-3 border-b border-border">
                             <div className="flex-[2]">
                                 <CustomSelect
                                     value={String(currentMonth)}

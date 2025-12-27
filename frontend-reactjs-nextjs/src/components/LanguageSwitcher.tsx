@@ -7,7 +7,7 @@ export function LanguageSwitcher() {
     const { locale, setLocale } = useLanguage();
 
     return (
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
+        <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg">
             <Button
                 variant={locale === 'vi' ? 'default' : 'ghost'}
                 size="sm"

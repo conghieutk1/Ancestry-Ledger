@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Trash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getBranch, updateBranch, deleteBranch } from '@/lib/api';
 import { FamilyBranch } from '@/types';
@@ -84,7 +85,9 @@ function BranchDetailPageClient({ id }: { id: string }) {
     if (loading) return <div className="p-6 text-center">Loading...</div>;
     if (!branch)
         return (
-            <div className="p-6 text-center text-red-500">Branch not found</div>
+            <div className="p-6 text-center text-destructive">
+                Branch not found
+            </div>
         );
 
     return (
@@ -97,10 +100,10 @@ function BranchDetailPageClient({ id }: { id: string }) {
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-2xl font-semibold text-slate-900">
+                        <h1 className="text-2xl font-semibold text-foreground">
                             Edit Branch
                         </h1>
-                        <p className="text-sm text-slate-500">
+                        <p className="text-sm text-muted-foreground">
                             ID: {branch.id}
                         </p>
                     </div>
@@ -126,7 +129,7 @@ function BranchDetailPageClient({ id }: { id: string }) {
                             className="grid gap-4 md:grid-cols-2"
                         >
                             <div className="space-y-2 md:col-span-2">
-                                <label className="text-xs font-medium text-slate-700">
+                                <label className="text-xs font-medium text-foreground">
                                     {t.common.branch} Order
                                 </label>
                                 <Input
@@ -137,19 +140,19 @@ function BranchDetailPageClient({ id }: { id: string }) {
                                 />
                             </div>
                             <div className="space-y-2 md:col-span-2">
-                                <label className="text-xs font-medium text-slate-700">
+                                <label className="text-xs font-medium text-foreground">
                                     Description
                                 </label>
-                                <textarea
+                                <Textarea
                                     name="description"
                                     defaultValue={branch.description || ''}
                                     placeholder="Branch description..."
-                                    className="flex min-h-[80px] w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-100 focus-visible:border-blue-300"
+                                    className="min-h-[80px]"
                                 />
                             </div>
 
                             {error && (
-                                <div className="col-span-2 text-sm text-red-500">
+                                <div className="col-span-2 text-sm text-destructive">
                                     {error}
                                 </div>
                             )}

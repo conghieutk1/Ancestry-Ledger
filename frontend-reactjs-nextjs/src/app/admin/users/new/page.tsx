@@ -51,10 +51,10 @@ export default function NewUserPage() {
                     </Link>
                 </Button>
                 <div>
-                    <h1 className="text-2xl font-semibold text-slate-900">
+                    <h1 className="text-2xl font-semibold text-foreground">
                         Add User
                     </h1>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-muted-foreground">
                         Create a new system user account.
                     </p>
                 </div>
@@ -71,7 +71,7 @@ export default function NewUserPage() {
                             className="grid gap-4 md:grid-cols-2"
                         >
                             <div className="space-y-2">
-                                <label className="text-xs font-medium text-slate-700">
+                                <label className="text-xs font-medium text-foreground">
                                     Email
                                 </label>
                                 <Input
@@ -82,7 +82,7 @@ export default function NewUserPage() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-xs font-medium text-slate-700">
+                                <label className="text-xs font-medium text-foreground">
                                     Display Name
                                 </label>
                                 <Input
@@ -92,7 +92,7 @@ export default function NewUserPage() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-xs font-medium text-slate-700">
+                                <label className="text-xs font-medium text-foreground">
                                     Password
                                 </label>
                                 <Input
@@ -104,12 +104,12 @@ export default function NewUserPage() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-xs font-medium text-slate-700">
+                                <label className="text-xs font-medium text-foreground">
                                     Role
                                 </label>
                                 <select
                                     name="role"
-                                    className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-100 focus-visible:border-blue-300"
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-input"
                                     required
                                 >
                                     <option value={Role.MEMBER}>Member</option>
@@ -121,7 +121,7 @@ export default function NewUserPage() {
                             </div>
 
                             {error && (
-                                <div className="col-span-2 text-sm text-red-500">
+                                <div className="col-span-2 text-sm text-destructive">
                                     {error}
                                 </div>
                             )}

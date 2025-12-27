@@ -407,7 +407,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                     </CardHeader>
                     <CardContent className="grid gap-4 md:grid-cols-6">
                         <div className="md:col-span-2 space-y-3">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label className="text-sm font-medium text-foreground">
                                 {t.form.lastName}
                             </label>
                             <Input
@@ -417,7 +417,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                             />
                         </div>
                         <div className="md:col-span-2 space-y-3">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label className="text-sm font-medium text-foreground">
                                 {t.form.middleName}
                             </label>
                             <Input
@@ -427,9 +427,9 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                             />
                         </div>
                         <div className="md:col-span-2 space-y-3">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label className="text-sm font-medium text-foreground">
                                 {t.form.firstName}{' '}
-                                <span className="text-red-500">*</span>
+                                <span className="text-destructive">*</span>
                             </label>
                             <Input
                                 name="firstName"
@@ -439,7 +439,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                         </div>
 
                         <div className="md:col-span-2 space-y-3">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label className="text-sm font-medium text-foreground">
                                 {t.common.gender}
                             </label>
                             <CustomSelect
@@ -473,9 +473,9 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                             />
                         </div>
                         <div className="md:col-span-2 space-y-3">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label className="text-sm font-medium text-foreground">
                                 {t.common.dateOfBirth}{' '}
-                                <span className="text-red-500">*</span>
+                                <span className="text-destructive">*</span>
                             </label>
                             <CustomDatePicker
                                 value={
@@ -498,7 +498,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                             />
                         </div>
                         <div className="md:col-span-2 space-y-3">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label className="text-sm font-medium text-foreground">
                                 {t.common.placeOfBirth}
                             </label>
                             <Input
@@ -508,7 +508,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                         </div>
 
                         <div className="md:col-span-2 space-y-3">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label className="text-sm font-medium text-foreground">
                                 {t.common.occupation}
                             </label>
                             <Input
@@ -517,7 +517,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                             />
                         </div>
                         <div className="md:col-span-2 space-y-3">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label className="text-sm font-medium text-foreground">
                                 {t.common.phoneNumber}
                             </label>
                             <Input
@@ -538,7 +538,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                             />
                         </div>
                         <div className="md:col-span-2 space-y-3">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label className="text-sm font-medium text-foreground">
                                 {t.common.avatarUrl}
                             </label>
                             <Input
@@ -548,7 +548,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                             />
                         </div>
                         <div className="md:col-span-2 space-y-3">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label className="text-sm font-medium text-foreground">
                                 {t.common.status}
                             </label>
                             <CustomSelect
@@ -584,7 +584,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                         {!member.isAlive && (
                             <>
                                 <div className="md:col-span-2 space-y-3">
-                                    <label className="text-sm font-medium text-slate-700">
+                                    <label className="text-sm font-medium text-foreground">
                                         {t.common.dateOfDeath}
                                     </label>
                                     <CustomDatePicker
@@ -610,7 +610,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                     />
                                 </div>
                                 <div className="md:col-span-2 space-y-3">
-                                    <label className="text-sm font-medium text-slate-700">
+                                    <label className="text-sm font-medium text-foreground">
                                         {t.common.placeOfDeath}
                                     </label>
                                     <Input
@@ -636,7 +636,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                             }}
                             type="button"
                             disabled={hasChildren}
-                            className="h-8 px-2 text-slate-500 hover:text-red-600"
+                            className="h-8 px-2 text-muted-foreground hover:text-destructive"
                         >
                             <X className="mr-1 h-4 w-4" />
                             {t.common.clear}
@@ -644,7 +644,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                     </CardHeader>
                     <CardContent className="grid gap-4 md:grid-cols-6">
                         <div className="md:col-span-3 space-y-3">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label className="text-sm font-medium text-foreground">
                                 {t.common.father}
                             </label>
                             <CustomSelect
@@ -735,7 +735,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                             />
                         </div>
                         <div className="md:col-span-3 space-y-3">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label className="text-sm font-medium text-foreground">
                                 {t.common.mother}
                             </label>
                             <CustomSelect
@@ -828,7 +828,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
 
                         {/* Spouse Selection - Visual Only for now as Marital Status card handles logic */}
                         <div className="md:col-span-6 space-y-3">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label className="text-sm font-medium text-foreground">
                                 {t.common.spouse}
                             </label>
                             <CustomSelect
@@ -871,7 +871,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                         </div>
 
                         <div className="md:col-span-2 space-y-3">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label className="text-sm font-medium text-foreground">
                                 {t.common.branch}
                             </label>
                             <CustomSelect
@@ -897,13 +897,13 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                 }))}
                                 placeholder={t.common.autoSelect}
                                 searchPlaceholder={t.common.search}
-                                className="bg-slate-50"
+                                className="bg-muted/50"
                                 disabled
                             />
                         </div>
 
                         <div className="md:col-span-2 space-y-3">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label className="text-sm font-medium text-foreground">
                                 {t.common.generationIndex}
                             </label>
                             <CustomSelect
@@ -932,13 +932,13 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                 }))}
                                 placeholder={t.common.autoSelect}
                                 searchPlaceholder={t.common.search}
-                                className="bg-slate-50"
+                                className="bg-muted/50"
                                 disabled
                             />
                         </div>
 
                         <div className="md:col-span-2 space-y-3">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label className="text-sm font-medium text-foreground">
                                 {t.common.visibility}
                             </label>
                             <CustomSelect
@@ -983,7 +983,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                     </CardHeader>
                     <CardContent className="grid gap-4 md:grid-cols-6">
                         <div className="md:col-span-6 space-y-3">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label className="text-sm font-medium text-foreground">
                                 {t.common.bio}
                             </label>
                             <Textarea
@@ -993,7 +993,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                             />
                         </div>
                         <div className="md:col-span-6 space-y-3">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label className="text-sm font-medium text-foreground">
                                 {t.common.notes}
                             </label>
                             <Textarea
@@ -1006,7 +1006,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                 </Card>
 
                 {error && (
-                    <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+                    <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
                         {error}
                     </div>
                 )}
@@ -1026,7 +1026,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                 <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>
                         {t.members.maritalStatus}
-                        <span className="ml-2 text-sm font-normal text-slate-500">
+                        <span className="ml-2 text-sm font-normal text-muted-foreground">
                             ({getStatusLabel(currentStatus)})
                         </span>
                     </CardTitle>
@@ -1190,7 +1190,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                                                     }
                                                                 />
                                                                 <div
-                                                                    className="fixed rounded-md border border-slate-200 bg-white shadow-md animate-in fade-in-0 zoom-in-95"
+                                                                    className="fixed rounded-md border border-border bg-popover shadow-md animate-in fade-in-0 zoom-in-95"
                                                                     style={{
                                                                         zIndex: 99999,
                                                                         top: dropdownPosition.top,
@@ -1198,10 +1198,10 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                                                         width: dropdownPosition.width,
                                                                     }}
                                                                 >
-                                                                    <div className="flex items-center border-b px-3">
+                                                                    <div className="flex items-center border-b border-border px-3">
                                                                         <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                                                                         <input
-                                                                            className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-50"
+                                                                            className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
                                                                             placeholder={
                                                                                 t
                                                                                     .common
@@ -1230,7 +1230,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                                                     <div className="max-h-[200px] overflow-y-auto p-1">
                                                                         {filteredSpouses.length ===
                                                                         0 ? (
-                                                                            <div className="py-6 text-center text-sm text-slate-500">
+                                                                            <div className="py-6 text-center text-sm text-muted-foreground">
                                                                                 {
                                                                                     t
                                                                                         .members
@@ -1246,11 +1246,14 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                                                                         key={
                                                                                             p.id
                                                                                         }
+                                                                                        title={
+                                                                                            p.fullName
+                                                                                        }
                                                                                         className={cn(
-                                                                                            'relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-slate-100 hover:text-slate-900',
+                                                                                            'relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground',
                                                                                             selectedSpouseId ===
                                                                                                 p.id &&
-                                                                                                'bg-slate-100'
+                                                                                                'bg-accent text-accent-foreground'
                                                                                         )}
                                                                                         onClick={(
                                                                                             e
@@ -1283,7 +1286,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                                                                                     p.fullName
                                                                                                 }
                                                                                             </span>
-                                                                                            <span className="text-xs text-slate-500">
+                                                                                            <span className="text-xs text-muted-foreground">
                                                                                                 {p.dateOfBirth
                                                                                                     ? new Date(
                                                                                                           p.dateOfBirth
@@ -1348,7 +1351,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                 <CardContent>
                     {marriages.length === 0 ? (
                         <div className="text-center py-8">
-                            <p className="text-sm text-slate-500">
+                            <p className="text-sm text-muted-foreground">
                                 {t.members.noSpouse}
                             </p>
                         </div>
@@ -1357,12 +1360,12 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                             {marriages.map((m) => {
                                 const statusColors = {
                                     MARRIED:
-                                        'bg-emerald-100 text-emerald-700 border-emerald-200',
-                                    SINGLE: 'bg-slate-100 text-slate-700 border-slate-200',
+                                        'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800',
+                                    SINGLE: 'bg-muted text-muted-foreground border-border',
                                     DIVORCED:
-                                        'bg-orange-100 text-orange-700 border-orange-200',
+                                        'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800',
                                     WIDOWED:
-                                        'bg-blue-100 text-blue-700 border-blue-200',
+                                        'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800',
                                 };
                                 const spouse =
                                     m.partner1?.id === member.id
@@ -1372,11 +1375,11 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                 return (
                                     <div
                                         key={m.id}
-                                        className="group relative flex items-center gap-4 p-4 border border-slate-200 rounded-xl hover:border-slate-300 hover:shadow-sm transition-all duration-200 bg-white"
+                                        className="group relative flex items-center gap-4 p-4 border border-border rounded-xl hover:border-sidebar-accent hover:shadow-sm transition-all duration-200 bg-card"
                                     >
                                         {/* Avatar Circle */}
                                         <div className="shrink-0">
-                                            <div className="w-12 h-12 rounded-full bg-linear-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-600 font-semibold text-lg border-2 border-white shadow-sm">
+                                            <div className="w-12 h-12 rounded-full bg-linear-to-br from-muted to-muted/80 flex items-center justify-center text-muted-foreground font-semibold text-lg border-2 border-background shadow-sm">
                                                 {spouse?.fullName
                                                     ?.charAt(0)
                                                     ?.toUpperCase() || '?'}
@@ -1386,7 +1389,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                         {/* Info Section */}
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 mb-1">
-                                                <h4 className="font-semibold text-slate-900 truncate">
+                                                <h4 className="font-semibold text-foreground truncate">
                                                     {spouse?.fullName ||
                                                         t.common.unknown}
                                                 </h4>
@@ -1401,7 +1404,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                                     {getStatusLabel(m.status)}
                                                 </span>
                                             </div>
-                                            <p className="text-sm text-slate-500">
+                                            <p className="text-sm text-muted-foreground">
                                                 {m.startDate
                                                     ? new Date(
                                                           m.startDate
@@ -1425,7 +1428,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                                 </Link>
                                             </Button>
                                         ) : (
-                                            <span className="text-xs text-slate-400">
+                                            <span className="text-xs text-muted-foreground/70">
                                                 {t.members.noProfile}
                                             </span>
                                         )}
@@ -1441,10 +1444,10 @@ export function MemberDetailPageClient({ id }: { id: string }) {
             <Card>
                 <CardContent className="flex items-center justify-between p-6">
                     <div>
-                        <h4 className="font-medium text-slate-900">
+                        <h4 className="font-medium text-foreground">
                             {t.common.deleteMember}
                         </h4>
-                        <p className="text-sm text-slate-500">
+                        <p className="text-sm text-muted-foreground">
                             {t.common.deleteWarning}
                         </p>
                     </div>

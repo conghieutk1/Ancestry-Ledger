@@ -36,7 +36,7 @@ const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps>(
             <div
                 ref={ref}
                 className={cn(
-                    'relative z-50 w-full max-w-2xl max-h-[85vh] overflow-hidden bg-white rounded-lg shadow-2xl border border-slate-200',
+                    'relative z-50 w-full max-w-2xl max-h-[85vh] overflow-hidden bg-background rounded-lg shadow-2xl border border-border',
                     className
                 )}
                 {...props}
@@ -96,7 +96,9 @@ const DialogDescription = ({
     className?: string;
 }) => {
     return (
-        <p className={cn('text-sm text-slate-500', className)}>{children}</p>
+        <p className={cn('text-sm text-muted-foreground', className)}>
+            {children}
+        </p>
     );
 };
 
@@ -104,9 +106,9 @@ const DialogClose = ({ onClose }: { onClose: () => void }) => {
     return (
         <button
             onClick={onClose}
-            className="absolute right-4 top-4 z-10 rounded-sm opacity-70 ring-offset-white transition-opacity hover:opacity-100 hover:bg-slate-100 p-1 focus:outline-none focus:ring-2 focus:ring-slate-950 focus:ring-offset-2"
+            className="absolute right-4 top-4 z-10 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 hover:bg-accent hover:text-accent-foreground p-1 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
         >
-            <X className="h-4 w-4 text-slate-600" />
+            <X className="h-4 w-4 text-muted-foreground" />
             <span className="sr-only">Close</span>
         </button>
     );

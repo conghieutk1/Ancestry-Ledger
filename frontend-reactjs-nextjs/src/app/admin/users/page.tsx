@@ -61,10 +61,10 @@ export default function UsersPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-semibold text-slate-900">
+                    <h1 className="text-2xl font-semibold text-foreground">
                         Users
                     </h1>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-muted-foreground">
                         Manage system access and roles.
                     </p>
                 </div>
@@ -78,7 +78,7 @@ export default function UsersPage() {
 
             <div className="flex items-center gap-4">
                 <div className="relative flex-1 md:max-w-sm">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                         placeholder="Search users..."
                         className="pl-9"
@@ -88,7 +88,7 @@ export default function UsersPage() {
                 </div>
             </div>
 
-            <div className="rounded-md border border-slate-200 bg-white">
+            <div className="rounded-md border border-border bg-card">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -107,7 +107,7 @@ export default function UsersPage() {
                             <TableRow>
                                 <TableCell
                                     colSpan={4}
-                                    className="text-center py-8 text-slate-500"
+                                    className="text-center py-8 text-muted-foreground"
                                 >
                                     No users found.
                                 </TableCell>
@@ -128,7 +128,7 @@ export default function UsersPage() {
                                             <span className="font-medium">
                                                 {user.displayName || 'No name'}
                                             </span>
-                                            <span className="text-xs text-slate-500">
+                                            <span className="text-xs text-muted-foreground">
                                                 {user.email}
                                             </span>
                                         </div>

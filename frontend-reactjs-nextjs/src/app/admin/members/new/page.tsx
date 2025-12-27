@@ -71,12 +71,14 @@ export default function NewMemberPage() {
             formRef.current?.reset();
 
             toast.success(t.messages.refreshSuccess, {
-                className: 'bg-emerald-500 text-white border-emerald-600',
+                className:
+                    'bg-emerald-500 text-white border-emerald-600 dark:bg-emerald-900 dark:border-emerald-800 dark:text-emerald-100',
             });
         } catch (err) {
             console.error('Failed to fetch form data', err);
             toast.error(t.messages.refreshError, {
-                className: 'bg-red-500 text-white border-red-600',
+                className:
+                    'bg-destructive text-destructive-foreground border-destructive',
             });
         } finally {
             setIsFetching(false);
@@ -151,7 +153,8 @@ export default function NewMemberPage() {
         // Validation: Required fields
         if (!lastName || !lastName.trim()) {
             toast.error(`${t.form.lastName} ${t.common.required}`, {
-                className: 'bg-red-500 text-white border-red-600',
+                className:
+                    'bg-destructive text-destructive-foreground border-destructive',
             });
             setLoading(false);
             return;
@@ -159,7 +162,8 @@ export default function NewMemberPage() {
 
         if (!firstName || !firstName.trim()) {
             toast.error(`${t.form.firstName} ${t.common.required}`, {
-                className: 'bg-red-500 text-white border-red-600',
+                className:
+                    'bg-destructive text-destructive-foreground border-destructive',
             });
             setLoading(false);
             return;
@@ -167,7 +171,8 @@ export default function NewMemberPage() {
 
         if (!dateOfBirth) {
             toast.error(`${t.common.dateOfBirth} ${t.common.required}`, {
-                className: 'bg-red-500 text-white border-red-600',
+                className:
+                    'bg-destructive text-destructive-foreground border-destructive',
             });
             setLoading(false);
             return;
@@ -177,7 +182,8 @@ export default function NewMemberPage() {
         // Exception: If this is the first member in the system
         if (members.length > 0 && !fatherId && !motherId && !spouseId) {
             toast.error(t.messages.validationConnectionRequired, {
-                className: 'bg-red-500 text-white border-red-600',
+                className:
+                    'bg-destructive text-destructive-foreground border-destructive',
             });
             setLoading(false);
             return;
@@ -202,7 +208,8 @@ export default function NewMemberPage() {
                             minAge.toString()
                         ),
                         {
-                            className: 'bg-red-500 text-white border-red-600',
+                            className:
+                                'bg-destructive text-destructive-foreground border-destructive',
                         }
                     );
                     setLoading(false);
@@ -224,7 +231,7 @@ export default function NewMemberPage() {
                             ),
                             {
                                 className:
-                                    'bg-red-500 text-white border-red-600',
+                                    'bg-destructive text-destructive-foreground border-destructive',
                             }
                         );
                         setLoading(false);
@@ -277,19 +284,22 @@ export default function NewMemberPage() {
                 } catch (marriageErr) {
                     console.error('Failed to create marriage', marriageErr);
                     toast.error(t.messages.marriageCreateError, {
-                        className: 'bg-red-500 text-white border-red-600',
+                        className:
+                            'bg-destructive text-destructive-foreground border-destructive',
                     });
                 }
             }
 
             toast.success(t.messages.createSuccess, {
-                className: 'bg-emerald-500 text-white border-emerald-600',
+                className:
+                    'bg-emerald-500 text-white border-emerald-600 dark:bg-emerald-900 dark:border-emerald-800 dark:text-emerald-100',
             });
             router.push('/admin/members');
         } catch (err) {
             console.error(err);
             toast.error(t.messages.createError, {
-                className: 'bg-red-500 text-white border-red-600',
+                className:
+                    'bg-destructive text-destructive-foreground border-destructive',
             });
         } finally {
             setLoading(false);
@@ -306,10 +316,10 @@ export default function NewMemberPage() {
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900">
+                        <h1 className="text-2xl font-bold text-foreground">
                             {t.members.newMember}
                         </h1>
-                        <p className="text-sm text-slate-500">
+                        <p className="text-sm text-muted-foreground">
                             {t.members.newMemberSubtitle}
                         </p>
                     </div>
@@ -335,7 +345,7 @@ export default function NewMemberPage() {
                             size="sm"
                             onClick={handleClearPersonalInfo}
                             type="button"
-                            className="h-8 px-2 text-slate-500 hover:text-red-600"
+                            className="h-8 px-2 text-muted-foreground hover:text-destructive"
                         >
                             <X className="mr-1 h-4 w-4" />
                             {t.common.clear}
@@ -343,30 +353,30 @@ export default function NewMemberPage() {
                     </CardHeader>
                     <CardContent className="grid gap-4 md:grid-cols-6">
                         <div className="md:col-span-2 space-y-3">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label className="text-sm font-medium text-foreground">
                                 {t.form.lastName}{' '}
-                                <span className="text-red-500">*</span>
+                                <span className="text-destructive">*</span>
                             </label>
                             <Input name="lastName" placeholder="Đặng" />
                         </div>
                         <div className="md:col-span-2 space-y-3">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label className="text-sm font-medium text-foreground">
                                 {t.form.middleName}
                             </label>
                             <Input name="middleName" placeholder="Hữu" />
                         </div>
                         <div className="md:col-span-2 space-y-3">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label className="text-sm font-medium text-foreground">
                                 {t.form.firstName}{' '}
-                                <span className="text-red-500">*</span>
+                                <span className="text-destructive">*</span>
                             </label>
                             <Input name="firstName" placeholder="" />
                         </div>
 
                         <div className="md:col-span-2 space-y-3">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label className="text-sm font-medium text-foreground">
                                 {t.common.gender}{' '}
-                                <span className="text-red-500">*</span>
+                                <span className="text-destructive">*</span>
                             </label>
                             <CustomSelect
                                 value={gender}
@@ -397,9 +407,9 @@ export default function NewMemberPage() {
                         </div>
 
                         <div className="md:col-span-2 space-y-3">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label className="text-sm font-medium text-foreground">
                                 {t.common.dateOfBirth}{' '}
-                                <span className="text-red-500">*</span>
+                                <span className="text-destructive">*</span>
                             </label>
                             <CustomDatePicker
                                 value={dateOfBirth}
@@ -409,28 +419,28 @@ export default function NewMemberPage() {
                         </div>
 
                         <div className="md:col-span-2 space-y-3">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label className="text-sm font-medium text-foreground">
                                 {t.common.placeOfBirth}
                             </label>
                             <Input name="placeOfBirth" placeholder="" />
                         </div>
 
                         <div className="md:col-span-2 space-y-3">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label className="text-sm font-medium text-foreground">
                                 {t.common.occupation}
                             </label>
                             <Input name="occupation" placeholder="" />
                         </div>
 
                         <div className="md:col-span-2 space-y-3">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label className="text-sm font-medium text-foreground">
                                 {t.common.phoneNumber}
                             </label>
                             <Input name="phoneNumber" placeholder="" />
                         </div>
 
                         <div className="md:col-span-2 space-y-3">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label className="text-sm font-medium text-foreground">
                                 {t.common.avatarUrl}
                             </label>
                             <Input
@@ -440,9 +450,9 @@ export default function NewMemberPage() {
                         </div>
 
                         <div className="md:col-span-2 space-y-3">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label className="text-sm font-medium text-foreground">
                                 {t.common.status}{' '}
-                                <span className="text-red-500">*</span>
+                                <span className="text-destructive">*</span>
                             </label>
                             <CustomSelect
                                 value={isAlive ? 'alive' : 'deceased'}
@@ -467,7 +477,7 @@ export default function NewMemberPage() {
                         {!isAlive && (
                             <>
                                 <div className="md:col-span-2 space-y-3">
-                                    <label className="text-sm font-medium text-slate-700">
+                                    <label className="text-sm font-medium text-foreground">
                                         {t.common.dateOfDeath}
                                     </label>
                                     <CustomDatePicker
@@ -477,7 +487,7 @@ export default function NewMemberPage() {
                                     />
                                 </div>
                                 <div className="md:col-span-2 space-y-3">
-                                    <label className="text-sm font-medium text-slate-700">
+                                    <label className="text-sm font-medium text-foreground">
                                         {t.common.placeOfDeath}
                                     </label>
                                     <Input name="placeOfDeath" placeholder="" />
@@ -496,7 +506,7 @@ export default function NewMemberPage() {
                             size="sm"
                             onClick={handleClearFamilyConnections}
                             type="button"
-                            className="h-8 px-2 text-slate-500 hover:text-red-600"
+                            className="h-8 px-2 text-muted-foreground hover:text-destructive"
                         >
                             <X className="mr-1 h-4 w-4" />
                             {t.common.clear}
@@ -504,18 +514,18 @@ export default function NewMemberPage() {
                     </CardHeader>
                     <CardContent className="grid gap-4 md:grid-cols-6">
                         {isFetching ? (
-                            <div className="col-span-6 text-center py-8 text-slate-500">
+                            <div className="col-span-6 text-center py-8 text-muted-foreground">
                                 {t.common.loading}
                             </div>
                         ) : members.length === 0 ? (
-                            <div className="col-span-6 flex flex-col items-center justify-center py-6 text-center space-y-2 bg-slate-50 rounded-lg border border-slate-100">
-                                <div className="p-3 bg-blue-100 rounded-full">
-                                    <User className="h-6 w-6 text-blue-600" />
+                            <div className="col-span-6 flex flex-col items-center justify-center py-6 text-center space-y-2 bg-muted/50 rounded-lg border border-border">
+                                <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                                    <User className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                                 </div>
-                                <h3 className="font-medium text-slate-900">
+                                <h3 className="font-medium text-foreground">
                                     {t.members.rootMember}
                                 </h3>
-                                <p className="text-sm text-slate-500 max-w-md">
+                                <p className="text-sm text-muted-foreground max-w-md">
                                     {t.members.rootMemberDescription}
                                 </p>
                             </div>
@@ -524,7 +534,7 @@ export default function NewMemberPage() {
                                 {(gender === Gender.MALE || !spouseId) && (
                                     <>
                                         <div className="md:col-span-3 space-y-3">
-                                            <label className="text-sm font-medium text-slate-700">
+                                            <label className="text-sm font-medium text-foreground">
                                                 {t.common.father}
                                             </label>
                                             <CustomSelect
@@ -628,7 +638,7 @@ export default function NewMemberPage() {
                                         </div>
 
                                         <div className="md:col-span-3 space-y-3">
-                                            <label className="text-sm font-medium text-slate-700">
+                                            <label className="text-sm font-medium text-foreground">
                                                 {t.common.mother}
                                             </label>
                                             <CustomSelect
@@ -770,7 +780,7 @@ export default function NewMemberPage() {
                                     !fatherId &&
                                     !motherId && (
                                         <div className="md:col-span-6 space-y-3">
-                                            <label className="text-sm font-medium text-slate-700">
+                                            <label className="text-sm font-medium text-foreground">
                                                 {t.common.spouse}
                                             </label>
                                             <CustomSelect
@@ -856,7 +866,7 @@ export default function NewMemberPage() {
                                     )}
 
                                 <div className="md:col-span-2 space-y-3 ">
-                                    <label className="text-sm font-medium text-slate-700">
+                                    <label className="text-sm font-medium text-foreground">
                                         {t.common.branch}
                                     </label>
                                     <CustomSelect
@@ -872,12 +882,11 @@ export default function NewMemberPage() {
                                         placeholder={t.common.autoSelect}
                                         searchPlaceholder={t.common.search}
                                         disabled={members.length > 0}
-                                        className="bg-slate-50"
                                     />
                                 </div>
 
                                 <div className="md:col-span-2 space-y-3">
-                                    <label className="text-sm font-medium text-slate-700">
+                                    <label className="text-sm font-medium text-foreground">
                                         {t.common.generationIndex}
                                     </label>
                                     <CustomSelect
@@ -901,12 +910,11 @@ export default function NewMemberPage() {
                                         placeholder={t.common.autoSelect}
                                         searchPlaceholder={t.common.search}
                                         disabled={members.length > 0}
-                                        className="bg-slate-50"
                                     />
                                 </div>
 
                                 <div className="md:col-span-2 space-y-3">
-                                    <label className="text-sm font-medium text-slate-700">
+                                    <label className="text-sm font-medium text-foreground">
                                         {t.common.visibility}
                                     </label>
                                     <CustomSelect
@@ -950,7 +958,7 @@ export default function NewMemberPage() {
                             size="sm"
                             onClick={handleClearAdditionalInfo}
                             type="button"
-                            className="h-8 px-2 text-slate-500 hover:text-red-600"
+                            className="h-8 px-2 text-muted-foreground hover:text-destructive"
                         >
                             <X className="mr-1 h-4 w-4" />
                             {t.common.clear}
@@ -958,14 +966,14 @@ export default function NewMemberPage() {
                     </CardHeader>
                     <CardContent className="grid gap-4 md:grid-cols-6">
                         <div className="md:col-span-6 space-y-3">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label className="text-sm font-medium text-foreground">
                                 {t.common.bio}
                             </label>
                             <Textarea name="bio" placeholder="" rows={4} />
                         </div>
 
                         <div className="md:col-span-6 space-y-3">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label className="text-sm font-medium text-foreground">
                                 {t.common.notes}
                             </label>
                             <Textarea name="notes" placeholder="" rows={3} />

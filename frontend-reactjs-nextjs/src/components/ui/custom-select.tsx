@@ -179,7 +179,7 @@ export const CustomSelect = React.forwardRef<HTMLDivElement, CustomSelectProps>(
                             />
                             <div
                                 ref={dropdownRef}
-                                className="fixed rounded-md border border-slate-200 bg-white shadow-md animate-in fade-in-0 zoom-in-95"
+                                className="fixed rounded-md border border-border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95"
                                 style={{
                                     zIndex: 99999,
                                     top: dropdownPosition.top,
@@ -189,10 +189,10 @@ export const CustomSelect = React.forwardRef<HTMLDivElement, CustomSelectProps>(
                                 }}
                             >
                                 {showSearch && (
-                                    <div className="flex items-center border-b px-3">
+                                    <div className="flex items-center border-b border-border px-3">
                                         <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                                         <input
-                                            className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-50"
+                                            className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
                                             placeholder={searchPlaceholder}
                                             onClick={(e) => e.stopPropagation()}
                                             value={searchTerm}
@@ -208,7 +208,7 @@ export const CustomSelect = React.forwardRef<HTMLDivElement, CustomSelectProps>(
                                     ref={optionsContainerRef}
                                 >
                                     {filteredOptions.length === 0 ? (
-                                        <div className="py-6 text-center text-sm text-slate-500">
+                                        <div className="py-6 text-center text-sm text-muted-foreground">
                                             {emptyMessage}
                                         </div>
                                     ) : (
@@ -216,9 +216,9 @@ export const CustomSelect = React.forwardRef<HTMLDivElement, CustomSelectProps>(
                                             <div
                                                 key={option.value}
                                                 className={cn(
-                                                    'relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-slate-100 hover:text-slate-900 transition-colors',
+                                                    'relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground transition-colors',
                                                     value === option.value &&
-                                                        'bg-slate-100'
+                                                        'bg-accent text-accent-foreground'
                                                 )}
                                                 ref={(el) => {
                                                     optionRefs.current[

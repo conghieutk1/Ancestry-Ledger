@@ -34,10 +34,10 @@ export default function BranchesPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-semibold text-slate-900">
+                    <h1 className="text-2xl font-semibold text-foreground">
                         {t.branches.title}
                     </h1>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-muted-foreground">
                         {t.branches.subtitle}
                     </p>
                 </div>
@@ -46,7 +46,7 @@ export default function BranchesPage() {
             {loading ? (
                 <DashboardStatsSkeleton />
             ) : branches.length === 0 ? (
-                <div className="text-center py-12 text-slate-500">
+                <div className="text-center py-12 text-muted-foreground">
                     {t.branches.noBranches}
                 </div>
             ) : (
@@ -60,17 +60,17 @@ export default function BranchesPage() {
                                         branch.branchOrder?.toString() || '?'
                                     )}
                                 </CardTitle>
-                                <GitBranch className="h-4 w-4 text-slate-500" />
+                                <GitBranch className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold">
                                     {branch.memberCount || 0}
                                 </div>
-                                <p className="text-xs text-slate-500">
+                                <p className="text-xs text-muted-foreground">
                                     {t.branches.members}
                                 </p>
                                 {branch.description && (
-                                    <p className="mt-2 text-xs text-slate-500 line-clamp-2">
+                                    <p className="mt-2 text-xs text-muted-foreground line-clamp-2">
                                         {branch.description}
                                     </p>
                                 )}
