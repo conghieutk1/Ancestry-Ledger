@@ -63,6 +63,7 @@ export interface Member {
     marriagesAsPartner1?: Marriage[];
     marriagesAsPartner2?: Marriage[];
     spouse?: Member;
+    marriageStatus?: 'MARRIED' | 'DIVORCED' | 'SEPARATED' | 'WIDOWED';
     generation?: string;
     branchDisplay?: string;
     birthYear?: number;

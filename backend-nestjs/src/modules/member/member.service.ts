@@ -146,27 +146,50 @@ export class MemberService {
           where: [{ father: { id: member.id } }, { mother: { id: member.id } }],
         });
 
-        // Get spouse from marriages - try active marriages first, then any marriage
+        // Get spouse from marriages - find the latest marriage event
         let spouse = null;
+        let marriageStatus = null;
         const marriages1 = member.marriagesAsPartner1 || [];
         const marriages2 = member.marriagesAsPartner2 || [];
 
-        // Get active marriages (status = MARRIED)
-        const activeMarriage1 = marriages1.find(
-          (m: Marriage) => m.status === MarriageStatus.MARRIED,
-        );
-        const activeMarriage2 = marriages2.find(
-          (m: Marriage) => m.status === MarriageStatus.MARRIED,
-        );
+        const allMarriages = [...marriages1, ...marriages2];
 
-        if (activeMarriage1 && activeMarriage1.partner2) {
-          spouse = activeMarriage1.partner2;
-        } else if (activeMarriage2 && activeMarriage2.partner1) {
-          spouse = activeMarriage2.partner1;
-        } else if (marriages1.length > 0 && marriages1[0].partner2) {
-          spouse = marriages1[0].partner2;
-        } else if (marriages2.length > 0 && marriages2[0].partner1) {
-          spouse = marriages2[0].partner1;
+        // Sort by startDate desc, then createdAt desc to find the latest marriage
+        allMarriages.sort((a, b) => {
+          const dateA = a.startDate
+            ? new Date(a.startDate).getTime()
+            : new Date(a.createdAt).getTime();
+          const dateB = b.startDate
+            ? new Date(b.startDate).getTime()
+            : new Date(b.createdAt).getTime();
+          return dateB - dateA;
+        });
+
+        const latestMarriage = allMarriages[0];
+
+        if (latestMarriage) {
+          marriageStatus = latestMarriage.status;
+
+          // Determine who is the spouse (the other partner)
+          // We must check IDs safely
+          if (
+            latestMarriage.partner1 &&
+            latestMarriage.partner1.id === member.id
+          ) {
+            spouse = latestMarriage.partner2;
+          } else if (
+            latestMarriage.partner2 &&
+            latestMarriage.partner2.id === member.id
+          ) {
+            spouse = latestMarriage.partner1;
+          } else {
+            // Fallback based on which list the marriage came from
+            if (marriages1.includes(latestMarriage)) {
+              spouse = latestMarriage.partner2;
+            } else {
+              spouse = latestMarriage.partner1;
+            }
+          }
         }
 
         // Format generation
@@ -193,6 +216,7 @@ export class MemberService {
           ...member,
           childrenCount,
           spouse,
+          marriageStatus,
           generation,
           branchDisplay,
           birthYear,
@@ -249,6 +273,7 @@ export class MemberService {
         const nextOrder = (maxOrderBranch[0]?.branchOrder || 0) + 1;
 
         const newBranch = this.branchRepository.create({
+          name: `Chi ${nextOrder}`,
           description: `Chi thứ ${nextOrder} của dòng họ`,
           branchOrder: nextOrder,
         });
@@ -288,6 +313,8 @@ export class MemberService {
 
   async update(id: string, updateMemberDto: UpdateMemberDto): Promise<Member> {
     const member = await this.findOne(id);
+    const wasAlive = member.isAlive; // Track previous state
+
     Object.assign(member, updateMemberDto);
     if (
       updateMemberDto.firstName ||
@@ -297,7 +324,30 @@ export class MemberService {
       member.fullName =
         `${member.lastName || ''} ${member.middleName || ''} ${member.firstName}`.trim();
     }
-    return this.memberRepository.save(member);
+
+    const savedMember = await this.memberRepository.save(member);
+
+    // Auto-update spouse to WIDOWED if member dies
+    // We check if they were alive and are now dead (isAlive === false)
+    if (wasAlive && savedMember.isAlive === false) {
+      const activeMarriage = [
+        ...(member.marriagesAsPartner1 || []),
+        ...(member.marriagesAsPartner2 || []),
+      ].find((m) => m.status === MarriageStatus.MARRIED && !m.endDate);
+
+      if (activeMarriage) {
+        activeMarriage.status = MarriageStatus.WIDOWED;
+        // Map widow date to startDate per project convention
+        activeMarriage.startDate = savedMember.dateOfDeath
+          ? new Date(savedMember.dateOfDeath)
+          : new Date();
+        activeMarriage.endDate = null; // Ensure active state for query purposes
+
+        await this.memberRepository.manager.save(Marriage, activeMarriage);
+      }
+    }
+
+    return savedMember;
   }
 
   async remove(id: string): Promise<void> {

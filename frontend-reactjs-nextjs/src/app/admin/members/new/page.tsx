@@ -817,44 +817,52 @@ export default function NewMemberPage() {
                                                 }}
                                                 options={members
                                                     .filter((m) => {
-                                                        // If new member is Male, show Females. If Female, show Males.
                                                         const targetGender =
                                                             (gender as Gender) ===
                                                             Gender.MALE
                                                                 ? Gender.FEMALE
                                                                 : Gender.MALE;
 
-                                                        // Check if member is currently married
-                                                        const isMarried =
-                                                            m.marriagesAsPartner1?.some(
-                                                                (mar) =>
-                                                                    mar.status ===
-                                                                    'MARRIED'
-                                                            ) ||
-                                                            m.marriagesAsPartner2?.some(
-                                                                (mar) =>
-                                                                    mar.status ===
-                                                                    'MARRIED'
-                                                            );
+                                                        if (
+                                                            m.gender !==
+                                                            targetGender
+                                                        )
+                                                            return false;
 
+                                                        // Check if member is currently married using backend computed status
+                                                        // This correctly handles chronology (latest event) and filters out only active marriages
                                                         return (
-                                                            m.gender ===
-                                                                targetGender &&
-                                                            !isMarried
+                                                            m.marriageStatus !==
+                                                            'MARRIED'
                                                         );
                                                     })
-                                                    .map((m) => ({
-                                                        value: m.id,
-                                                        label: `${
-                                                            m.fullName
-                                                        } • ${
-                                                            m.dateOfBirth
-                                                                ? new Date(
-                                                                      m.dateOfBirth
-                                                                  ).getFullYear()
-                                                                : '?'
-                                                        }`,
-                                                    }))}
+                                                    .map((m) => {
+                                                        let statusSuffix = '';
+                                                        if (
+                                                            m.marriageStatus ===
+                                                            'DIVORCED'
+                                                        ) {
+                                                            statusSuffix = ` (${t.common.divorced})`;
+                                                        } else if (
+                                                            m.marriageStatus ===
+                                                            'WIDOWED'
+                                                        ) {
+                                                            statusSuffix = ` (${t.common.widowed})`;
+                                                        }
+
+                                                        return {
+                                                            value: m.id,
+                                                            label: `${
+                                                                m.fullName
+                                                            }${statusSuffix} • ${
+                                                                m.dateOfBirth
+                                                                    ? new Date(
+                                                                          m.dateOfBirth
+                                                                      ).getFullYear()
+                                                                    : '?'
+                                                            }`,
+                                                        };
+                                                    })}
                                                 placeholder={
                                                     t.common.selectSpouse
                                                 }

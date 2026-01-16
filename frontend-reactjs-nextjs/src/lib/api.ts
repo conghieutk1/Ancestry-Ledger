@@ -146,7 +146,7 @@ export const getMembers = async (params?: {
 };
 
 export const getMember = async (id: string) => {
-    const response = await api.get<Member>(`/members/${id}`);
+    const response = await api.get<Member>(`/members/${id}?t=${Date.now()}`);
     return response.data;
 };
 

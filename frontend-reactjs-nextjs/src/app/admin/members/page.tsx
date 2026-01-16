@@ -444,24 +444,19 @@ export default function MembersPage() {
                                 // Format spouse - check marriages directly if spouse is not loaded
                                 let spouseName =
                                     member.spouse?.fullName || null;
-                                if (!spouseName) {
-                                    // Fallback: check marriages directly
-                                    const marriage1 =
-                                        member.marriagesAsPartner1?.[0];
-                                    const marriage2 =
-                                        member.marriagesAsPartner2?.[0];
-                                    if (marriage1 && marriage1.partner2) {
-                                        spouseName =
-                                            marriage1.partner2.fullName || null;
-                                    } else if (
-                                        marriage2 &&
-                                        marriage2.partner1
-                                    ) {
-                                        spouseName =
-                                            marriage2.partner1.fullName || null;
-                                    }
-                                }
-                                const isMarried = !!spouseName;
+                                let marriageStatus = member.marriageStatus;
+
+                                // Determine Status Label
+                                let statusLabel = t.common.single;
+                                if (marriageStatus === 'MARRIED')
+                                    statusLabel = t.common.married;
+                                else if (marriageStatus === 'DIVORCED')
+                                    statusLabel = t.common.divorced;
+                                else if (marriageStatus === 'WIDOWED')
+                                    statusLabel = t.common.married;
+                                // User requested to show "Married" even if widowed
+                                else if (spouseName)
+                                    statusLabel = t.common.married; // Fallback
 
                                 // Format children
                                 const childrenCount = member.childrenCount || 0;
@@ -547,21 +542,29 @@ export default function MembersPage() {
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-sm py-4 text-left">
-                                            {isMarried ? (
-                                                <div>
-                                                    <span className="font-medium">
-                                                        {t.common.married}
-                                                    </span>
-                                                    {' • '}
-                                                    <span className="font-medium">
-                                                        {spouseName}
-                                                    </span>
-                                                </div>
-                                            ) : (
-                                                <span className="text-muted-foreground">
-                                                    {t.common.single}
+                                            <div>
+                                                <span
+                                                    className={
+                                                        marriageStatus ||
+                                                        spouseName
+                                                            ? 'font-medium'
+                                                            : 'text-muted-foreground'
+                                                    }
+                                                >
+                                                    {statusLabel}
                                                 </span>
-                                            )}
+                                                {spouseName &&
+                                                    (!marriageStatus ||
+                                                        marriageStatus ===
+                                                            'MARRIED' ||
+                                                        marriageStatus ===
+                                                            'WIDOWED') && (
+                                                        <span className="font-medium">
+                                                            {' • '}
+                                                            {spouseName}
+                                                        </span>
+                                                    )}
+                                            </div>
                                         </TableCell>
                                         <TableCell className="text-sm py-4 text-center">
                                             {childrenCount > 0 ? (

@@ -205,45 +205,47 @@ export class MarriageService {
     }
 
     const getActiveMarriages = (member: Member) => {
+      // Include WIDOWED so we can close it when remarrying
+      const validStatuses = [MarriageStatus.MARRIED, MarriageStatus.WIDOWED];
       const m1 = (member.marriagesAsPartner1 || []).filter(
-        (m) => m.status === MarriageStatus.MARRIED && !m.endDate,
+        (m) => validStatuses.includes(m.status) && !m.endDate,
       );
       const m2 = (member.marriagesAsPartner2 || []).filter(
-        (m) => m.status === MarriageStatus.MARRIED && !m.endDate,
+        (m) => validStatuses.includes(m.status) && !m.endDate,
       );
       return [...m1, ...m2];
     };
 
+    // User explicitly sets status to SINGLE (e.g. Divorce request but using SINGLE status)
     if (status === MarriageStatus.SINGLE) {
       const activeMarriages = getActiveMarriages(p1);
       for (const m of activeMarriages) {
         m.endDate = date;
+        // We could update status to DIVORCED here if we wanted strict tracking
         await this.marriageRepository.save(m);
       }
-
-      if (p1.gender === Gender.MALE) {
-        const marriage = this.marriageRepository.create({
-          partner1: p1,
-          status: MarriageStatus.SINGLE,
-          startDate: date,
-          ...rest,
-        });
-        return this.marriageRepository.save(marriage);
-      }
-
       return null as any;
     }
 
     if (status === MarriageStatus.DIVORCED) {
       if (finalP2) {
         const activeMarriages = getActiveMarriages(finalP1);
-        const targetMarriage = activeMarriages.find(
-          (m) => m.partner1.id === finalP1.id && m.partner2?.id === finalP2.id,
-        );
+        const targetMarriage = activeMarriages.find((m) => {
+          const p1Id = m.partner1?.id;
+          const p2Id = m.partner2?.id;
+          return (
+            (p1Id === finalP1.id && p2Id === finalP2.id) ||
+            (p1Id === finalP2.id && p2Id === finalP1.id)
+          );
+        });
 
         if (targetMarriage) {
           targetMarriage.status = status as MarriageStatus;
-          targetMarriage.endDate = startDate ? new Date(startDate) : new Date();
+          // Per user request: Divorce date maps to startDate in DB
+          targetMarriage.startDate = startDate
+            ? new Date(startDate)
+            : new Date();
+          targetMarriage.endDate = null; // Clear end date as this is now the "Current" status start date?
           if (rest.notes) targetMarriage.notes = rest.notes;
           return this.marriageRepository.save(targetMarriage);
         }
@@ -253,14 +255,21 @@ export class MarriageService {
     if (status === MarriageStatus.WIDOWED) {
       if (finalP2) {
         const activeMarriages = getActiveMarriages(finalP1);
-        const targetMarriage = activeMarriages.find(
-          (m) => m.partner1.id === finalP1.id && m.partner2?.id === finalP2.id,
-        );
+        const targetMarriage = activeMarriages.find((m) => {
+          const p1Id = m.partner1?.id;
+          const p2Id = m.partner2?.id;
+          return (
+            (p1Id === finalP1.id && p2Id === finalP2.id) ||
+            (p1Id === finalP2.id && p2Id === finalP1.id)
+          );
+        });
 
         if (targetMarriage) {
           targetMarriage.status = status as MarriageStatus;
-          // For WIDOWED, we do NOT set endDate, so it remains "active" in the frontend
-          // and the status is displayed as WIDOWED.
+          // Per user request: Widow date maps to startDate in DB
+          targetMarriage.startDate = startDate
+            ? new Date(startDate)
+            : new Date();
           targetMarriage.endDate = null;
           if (rest.notes) targetMarriage.notes = rest.notes;
           return this.marriageRepository.save(targetMarriage);
@@ -275,23 +284,28 @@ export class MarriageService {
 
       for (const m of allActive) {
         // If the previous status was WIDOWED, we close it because they are now Remarrying.
-        // If the previous status was MARRIED, we keep it (Concurrent/Vợ 2).
         if (m.status === MarriageStatus.WIDOWED) {
           m.endDate = date;
           await this.marriageRepository.save(m);
         }
+        // Note: We do NOT automatically close concurrent MARRIED records here
+        // unless specifically required (Polygamy support).
+        // If Monogamy is strict, we would close them too.
+        // But user flow "MARRIED --divorce--> SINGLE" implies divorce is explicit.
       }
     }
 
+    // If we're here, it means we are creating a new marriage record.
+    // Per user request, Divorce/Widowed dates map to startDate.
     const marriage = this.marriageRepository.create({
       partner1: finalP1,
       partner2: finalP2,
       status: status as MarriageStatus,
       startDate: startDate ? new Date(startDate) : undefined,
+      endDate: undefined, // Always map input to start per request
       ...rest,
     });
-
-    return this.marriageRepository.save(marriage); // Handle partner updates if necessary, though usually we don't change partners in an update
+    return this.marriageRepository.save(marriage);
   }
 
   async update(

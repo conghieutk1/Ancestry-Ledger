@@ -13,6 +13,7 @@ import {
     Search,
     RefreshCw,
     X,
+    Edit,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,6 +43,7 @@ import {
     deleteMember,
     getMembers,
     createMarriage,
+    updateMarriage,
     getBranches,
 } from '@/lib/api';
 import { Member, Gender, Visibility, FamilyBranch } from '@/types';
@@ -73,11 +75,30 @@ export function MemberDetailPageClient({ id }: { id: string }) {
     const [comboboxOpen, setComboboxOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
 
+    // Divorce Modal State
+    const [showDivorceDialog, setShowDivorceDialog] = useState(false);
+    const [divorceDate, setDivorceDate] = useState('');
+    const [processingDivorce, setProcessingDivorce] = useState(false);
+
+    // Widow Modal State
+    const [showWidowDialog, setShowWidowDialog] = useState(false);
+    const [widowDate, setWidowDate] = useState('');
+    const [processingWidow, setProcessingWidow] = useState(false);
+
     const [fatherId, setFatherId] = useState('');
     const [motherId, setMotherId] = useState('');
     const [allMembers, setAllMembers] = useState<Member[]>([]);
     const [children, setChildren] = useState<Member[]>([]);
     const [branches, setBranches] = useState<FamilyBranch[]>([]);
+
+    // Edit Marriage Modal State
+    // Edit Marriage Modal State
+    const [showEditMarriageModal, setShowEditMarriageModal] = useState(false);
+    const [editMarriageId, setEditMarriageId] = useState('');
+    const [editStartDate, setEditStartDate] = useState('');
+    const [editEndDate, setEditEndDate] = useState('');
+    const [editField, setEditField] = useState<'START' | 'END'>('START');
+    const [isUpdatingMarriage, setIsUpdatingMarriage] = useState(false);
 
     // Dropdown Portal State
     const triggerRef = useRef<HTMLButtonElement>(null);
@@ -328,6 +349,134 @@ export function MemberDetailPageClient({ id }: { id: string }) {
         }
     };
 
+    const handleDivorce = async () => {
+        if (!member) return;
+
+        // Find current active spouse
+        const activeMarriage =
+            member.marriagesAsPartner1?.find((m) => !m.endDate) ||
+            member.marriagesAsPartner2?.find((m) => !m.endDate);
+
+        if (!activeMarriage) {
+            toast.error('No active marriage found to divorce.');
+            return;
+        }
+
+        const spouseId =
+            activeMarriage.partner1.id === member.id
+                ? activeMarriage.partner2.id
+                : activeMarriage.partner1.id;
+
+        setProcessingDivorce(true);
+        try {
+            await createMarriage({
+                partner1Id: member.id,
+                partner2Id: spouseId,
+                status: 'DIVORCED',
+                startDate: divorceDate
+                    ? new Date(divorceDate).toISOString()
+                    : new Date().toISOString(),
+            });
+
+            toast.success(t.messages.marriageUpdateSuccess, {
+                className: 'bg-emerald-500 text-white border-emerald-600',
+            });
+            setShowDivorceDialog(false);
+            setDivorceDate('');
+            fetchMember();
+        } catch (err: any) {
+            console.error(err);
+            const msg =
+                err.response?.data?.message || t.messages.marriageUpdateError;
+            toast.error(msg, {
+                className: 'bg-red-500 text-white border-red-600',
+            });
+        } finally {
+            setProcessingDivorce(false);
+        }
+    };
+
+    const handleWidow = async () => {
+        if (!member) return;
+
+        // Find current active spouse
+        const activeMarriage =
+            member.marriagesAsPartner1?.find((m) => !m.endDate) ||
+            member.marriagesAsPartner2?.find((m) => !m.endDate);
+
+        if (!activeMarriage) {
+            toast.error('No active marriage found.');
+            return;
+        }
+
+        const spouseId =
+            activeMarriage.partner1.id === member.id
+                ? activeMarriage.partner2.id
+                : activeMarriage.partner1.id;
+
+        setProcessingWidow(true);
+        try {
+            await createMarriage({
+                partner1Id: member.id,
+                partner2Id: spouseId,
+                status: 'WIDOWED',
+                startDate: widowDate
+                    ? new Date(widowDate).toISOString()
+                    : new Date().toISOString(),
+            });
+
+            toast.success(t.messages.marriageUpdateSuccess, {
+                className: 'bg-emerald-500 text-white border-emerald-600',
+            });
+            setShowWidowDialog(false);
+            setWidowDate('');
+            fetchMember();
+        } catch (err: any) {
+            console.error(err);
+            const msg =
+                err.response?.data?.message || t.messages.marriageUpdateError;
+            toast.error(msg, {
+                className: 'bg-red-500 text-white border-red-600',
+            });
+        } finally {
+            setProcessingWidow(false);
+        }
+    };
+    const handleUpdateMarriageLogs = async () => {
+        if (!editMarriageId) return;
+        setIsUpdatingMarriage(true);
+        try {
+            const payload: any = {};
+            if (editField === 'START') {
+                payload.startDate = editStartDate
+                    ? new Date(editStartDate).toISOString()
+                    : undefined; // Or null if clearing is supported
+            } else if (editField === 'END') {
+                payload.endDate = editEndDate
+                    ? new Date(editEndDate).toISOString()
+                    : null;
+            }
+
+            await updateMarriage(editMarriageId, payload);
+
+            toast.success(t.messages.updateSuccess, {
+                className: 'bg-emerald-500 text-white border-emerald-600',
+            });
+            setShowEditMarriageModal(false);
+
+            // Force a small delay to ensure DB propagation if necessary, though await should suffice
+            // setTimeout(() => fetchMember(), 100);
+            await fetchMember();
+        } catch (err) {
+            console.error(err);
+            toast.error(t.messages.updateError, {
+                className: 'bg-red-500 text-white border-red-600',
+            });
+        } finally {
+            setIsUpdatingMarriage(false);
+        }
+    };
+
     const getStatusLabel = (status: string) => {
         switch (status) {
             case 'SINGLE':
@@ -347,13 +496,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
     if (!member) return <div>{t.members.noProfile}</div>;
 
     // Determine current marital status from active marriages or member data
-    // This is a simplification; backend should ideally provide a "currentStatus" field
-    // For now, we look at the latest active marriage
-    const activeMarriage =
-        member.marriagesAsPartner1?.find((m) => !m.endDate) ||
-        member.marriagesAsPartner2?.find((m) => !m.endDate);
-
-    const currentStatus = activeMarriage ? activeMarriage.status : 'SINGLE';
+    // Sort all marriages by date descending first to get the latest status
     const marriages = [
         ...(member.marriagesAsPartner1 || []),
         ...(member.marriagesAsPartner2 || []),
@@ -362,6 +505,10 @@ export function MemberDetailPageClient({ id }: { id: string }) {
             new Date(b.startDate || 0).getTime() -
             new Date(a.startDate || 0).getTime()
     );
+
+    // Find the latest record that doesn't have an endDate
+    const activeMarriage = marriages.find((m) => !m.endDate);
+    const currentStatus = activeMarriage ? activeMarriage.status : 'SINGLE';
 
     // Check if member has children - if yes, disable changing parents
     const hasChildren = children.length > 0;
@@ -1031,62 +1178,24 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                         </span>
                     </CardTitle>
                     <div className="flex items-center gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                                setMarriageStatus('MARRIED');
-                                setShowMarriageModal(true);
-                            }}
-                        >
-                            <Plus className="mr-2 h-4 w-4" />
-                            {t.members.addMarriage}
-                        </Button>
+                        {currentStatus === 'MARRIED' && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                    setDivorceDate('');
+                                    setShowDivorceDialog(true);
+                                }}
+                            >
+                                <Edit className="mr-2 h-4 w-4" />
+                                {t.common.divorced}
+                            </Button>
+                        )}
+
                         <Dialog
                             open={showMarriageModal}
                             onOpenChange={setShowMarriageModal}
                         >
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="sm">
-                                        {t.members.changeMaritalStatus}
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem
-                                        onClick={() => {
-                                            setMarriageStatus('SINGLE');
-                                            setShowMarriageModal(true);
-                                        }}
-                                    >
-                                        {t.common.single}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        onClick={() => {
-                                            setMarriageStatus('MARRIED');
-                                            setShowMarriageModal(true);
-                                        }}
-                                    >
-                                        {t.common.married}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        onClick={() => {
-                                            setMarriageStatus('DIVORCED');
-                                            setShowMarriageModal(true);
-                                        }}
-                                    >
-                                        {t.common.divorced}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        onClick={() => {
-                                            setMarriageStatus('WIDOWED');
-                                            setShowMarriageModal(true);
-                                        }}
-                                    >
-                                        {t.common.widowed}
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
                             <DialogContent>
                                 <DialogHeader>
                                     <DialogTitle>
@@ -1389,9 +1498,19 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                         {/* Info Section */}
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 mb-1">
-                                                <h4 className="font-semibold text-foreground truncate">
-                                                    {spouse?.fullName ||
-                                                        t.common.unknown}
+                                                <h4 className="font-semibold text-foreground truncate hover:text-primary transition-colors">
+                                                    {spouse?.id ? (
+                                                        <Link
+                                                            href={`/admin/members/${spouse.id}`}
+                                                        >
+                                                            {spouse.fullName ||
+                                                                t.common
+                                                                    .unknown}
+                                                        </Link>
+                                                    ) : (
+                                                        spouse?.fullName ||
+                                                        t.common.unknown
+                                                    )}
                                                 </h4>
                                                 <span
                                                     className={cn(
@@ -1404,34 +1523,112 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                                     {getStatusLabel(m.status)}
                                                 </span>
                                             </div>
-                                            <p className="text-sm text-muted-foreground">
-                                                {m.startDate
-                                                    ? new Date(
-                                                          m.startDate
-                                                      ).getFullYear()
-                                                    : '?'}
-                                            </p>
+                                            <div className="flex flex-col gap-1">
+                                                {/* If Married, show Marriage Date using startDate */}
+                                                {m.status === 'MARRIED' && (
+                                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                        <span className="w-20">
+                                                            {
+                                                                t.members
+                                                                    .marriageDate
+                                                            }
+                                                            :
+                                                        </span>
+                                                        <span>
+                                                            {m.startDate
+                                                                ? new Date(
+                                                                      m.startDate
+                                                                  ).toLocaleDateString(
+                                                                      locale ===
+                                                                          'vi'
+                                                                          ? 'vi-VN'
+                                                                          : 'en-US'
+                                                                  )
+                                                                : '?'}
+                                                        </span>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-6 w-6"
+                                                            onClick={() => {
+                                                                setEditMarriageId(
+                                                                    m.id
+                                                                );
+                                                                setEditStartDate(
+                                                                    m.startDate ||
+                                                                        ''
+                                                                );
+                                                                setEditField(
+                                                                    'START'
+                                                                );
+                                                                setShowEditMarriageModal(
+                                                                    true
+                                                                );
+                                                            }}
+                                                        >
+                                                            <Edit className="h-3 w-3" />
+                                                        </Button>
+                                                    </div>
+                                                )}
+
+                                                {/* If Divorced/Widowed, display startDate as the event date per user request */}
+                                                {(m.status === 'DIVORCED' ||
+                                                    m.status === 'WIDOWED') && (
+                                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                        <span className="w-20">
+                                                            {m.status ===
+                                                            'DIVORCED'
+                                                                ? (
+                                                                      t.members as any
+                                                                  )
+                                                                      .divorceDate ||
+                                                                  'Divorce Date'
+                                                                : (
+                                                                      t.members as any
+                                                                  ).deathDate ||
+                                                                  'Date of Death'}
+                                                            :
+                                                        </span>
+                                                        <span>
+                                                            {m.startDate
+                                                                ? new Date(
+                                                                      m.startDate
+                                                                  ).toLocaleDateString(
+                                                                      locale ===
+                                                                          'vi'
+                                                                          ? 'vi-VN'
+                                                                          : 'en-US'
+                                                                  )
+                                                                : '?'}
+                                                        </span>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-6 w-6"
+                                                            onClick={() => {
+                                                                setEditMarriageId(
+                                                                    m.id
+                                                                );
+                                                                setEditStartDate(
+                                                                    m.startDate ||
+                                                                        ''
+                                                                );
+                                                                setEditField(
+                                                                    'START'
+                                                                );
+                                                                setShowEditMarriageModal(
+                                                                    true
+                                                                );
+                                                            }}
+                                                        >
+                                                            <Edit className="h-3 w-3" />
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
 
-                                        {/* Action Button */}
-                                        {spouse?.id ? (
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                                asChild
-                                            >
-                                                <Link
-                                                    href={`/admin/members/${spouse.id}`}
-                                                >
-                                                    {t.members.viewProfile}
-                                                </Link>
-                                            </Button>
-                                        ) : (
-                                            <span className="text-xs text-muted-foreground/70">
-                                                {t.members.noProfile}
-                                            </span>
-                                        )}
+                                        {/* Action Button - Removed generic edit */}
                                     </div>
                                 );
                             })}
@@ -1506,6 +1703,149 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                         </Button>
                         <Button onClick={confirmSave} disabled={saving}>
                             {saving ? t.common.saving : t.common.save}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog
+                open={showDivorceDialog}
+                onOpenChange={setShowDivorceDialog}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>
+                            {(t.common as any).confirmDivorce ||
+                                'Confirm Divorce'}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {(t.common as any).confirmDivorceMessage ||
+                                'Are you sure you want to register a divorce? This will end the current marriage.'}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-2">
+                        <Label>
+                            {(t.members as any).divorceDate || 'Divorce Date'}
+                        </Label>
+                        <CustomDatePicker
+                            value={divorceDate}
+                            onChange={(value) => setDivorceDate(value)}
+                            placeholder={t.common.date}
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowDivorceDialog(false)}
+                            disabled={processingDivorce}
+                        >
+                            {t.common.cancel}
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={handleDivorce}
+                            disabled={processingDivorce}
+                        >
+                            {processingDivorce
+                                ? t.common.saving
+                                : (t.common as any).confirm || 'Confirm'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={showWidowDialog} onOpenChange={setShowWidowDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>
+                            {(t.common as any).confirmWidow || 'Confirm Widow'}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {(t.common as any).confirmWidowMessage ||
+                                'Are you sure you want to register a widowed status? This will end the current marriage.'}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-2">
+                        <Label>
+                            {(t.members as any).deathDate || 'Date of Death'}
+                        </Label>
+                        <CustomDatePicker
+                            value={widowDate}
+                            onChange={(value) => setWidowDate(value)}
+                            placeholder={t.common.date}
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowWidowDialog(false)}
+                            disabled={processingWidow}
+                        >
+                            {t.common.cancel}
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={handleWidow}
+                            disabled={processingWidow}
+                        >
+                            {processingWidow
+                                ? t.common.saving
+                                : (t.common as any).confirm || 'Confirm'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog
+                open={showEditMarriageModal}
+                onOpenChange={setShowEditMarriageModal}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>
+                            {editField === 'START'
+                                ? (t.members as any).editMarriage ||
+                                  'Edit Marriage Date'
+                                : (t.members as any).editEndDate ||
+                                  'Edit End Date'}
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        {editField === 'START' && (
+                            <div className="space-y-2">
+                                <Label>{t.members.marriageDate}</Label>
+                                <CustomDatePicker
+                                    value={editStartDate}
+                                    onChange={setEditStartDate}
+                                    placeholder={t.common.date}
+                                />
+                            </div>
+                        )}
+                        {editField === 'END' && (
+                            <div className="space-y-2">
+                                <Label>End Date</Label>
+                                <CustomDatePicker
+                                    value={editEndDate}
+                                    onChange={setEditEndDate}
+                                    placeholder={t.common.date}
+                                />
+                            </div>
+                        )}
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowEditMarriageModal(false)}
+                        >
+                            {t.common.cancel}
+                        </Button>
+                        <Button
+                            onClick={handleUpdateMarriageLogs}
+                            disabled={isUpdatingMarriage}
+                        >
+                            {isUpdatingMarriage
+                                ? t.common.saving
+                                : t.common.save}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

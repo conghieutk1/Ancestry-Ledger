@@ -89,6 +89,7 @@ export const dictionaries = {
             additionalInfo: 'Additional Information',
             maritalStatus: 'Marital Status',
             changeMaritalStatus: 'Change Marital Status',
+            editMaritalStatus: 'Edit Marital Status',
             updateMaritalStatus: 'Update Marital Status',
             addMarriage: 'Add Marriage',
             addMarriageDescription:
@@ -99,6 +100,9 @@ export const dictionaries = {
             noProfile: 'No profile',
             noSpouse: 'No spouse',
             viewProfile: 'View Profile',
+            divorceDate: 'Divorce Date',
+            deathDate: 'Date of Death',
+            editEndDate: 'Edit End Date',
             filters: {
                 allGenders: 'All Genders',
                 allStatuses: 'All Statuses',
@@ -299,6 +303,7 @@ export const dictionaries = {
             additionalInfo: 'Thông tin bổ sung',
             maritalStatus: 'Tình trạng hôn nhân',
             changeMaritalStatus: 'Thay đổi tình trạng hôn nhân',
+            editMaritalStatus: 'Sửa trạng thái kết hôn',
             updateMaritalStatus: 'Cập nhật tình trạng hôn nhân',
             addMarriage: 'Thêm kết hôn',
             addMarriageDescription:
@@ -309,6 +314,9 @@ export const dictionaries = {
             noProfile: 'Chưa có hồ sơ',
             noSpouse: 'Chưa có vợ/chồng',
             viewProfile: 'Xem hồ sơ',
+            divorceDate: 'Ngày ly hôn',
+            deathDate: 'Ngày mất',
+            editEndDate: 'Sửa ngày kết thúc',
             filters: {
                 allGenders: 'Tất cả giới tính',
                 allStatuses: 'Tất cả trạng thái',
