@@ -18,7 +18,6 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import dagre from 'dagre';
-import { compareAsc, parseISO } from 'date-fns';
 import { getGenealogyTree } from '@/lib/api';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
@@ -133,7 +132,7 @@ const CoupleNode = ({ data, id }: { data: any; id: string }) => {
                 type="source"
                 position={Position.Bottom}
                 className="w-3 h-3 bg-transparent! border-none" // Hide actual handle, use button visual
-                style={{ top: '100%', transform: 'translateY(10px)' }} // Move down slightly
+                style={{ top: '100%', transform: 'translate(-50%, 10px)' }} // Move down slightly, keep centered
             />
         </div>
     );
@@ -150,128 +149,40 @@ const getLayoutedElements = (
     edges: Edge[],
     direction = 'TB',
 ) => {
-    // 1. Setup Dagre Graph
     const g = new dagre.graphlib.Graph();
-    g.setGraph({
-        rankdir: direction,
-        nodesep: 50, // Compact spacing
-        ranksep: 100,
-        align: 'UL', // Align top-left for stable base
-    });
+    g.setGraph({ rankdir: direction, nodesep: 50, ranksep: 100 });
     g.setDefaultEdgeLabel(() => ({}));
 
+    // Use a fixed max height for layout to ensure top-alignment
+    // This makes edges entering nodes of the same generation consistent in length
     const maxNodeHeight = 160;
 
-    // 2. Sort Children Logic (to keep order)
-    const nodeMap = new Map<string, Node>(nodes.map((n) => [n.id, n]));
-    const childrenMap = new Map<string, string[]>();
-
-    edges.forEach((e) => {
-        if (!childrenMap.has(e.source)) childrenMap.set(e.source, []);
-        childrenMap.get(e.source)?.push(e.target);
-    });
-
-    nodes.forEach((n) => {
-        const children = childrenMap.get(n.id);
-        if (children) {
-            children.sort((aId, bId) => {
-                const nodeA = nodeMap.get(aId);
-                const nodeB = nodeMap.get(bId);
-                const dataA = nodeA?.data as any;
-                const dataB = nodeB?.data as any;
-                const dateA = dataA?.primary?.birthDate;
-                const dateB = dataB?.primary?.birthDate;
-                if (dateA && dateB)
-                    return compareAsc(parseISO(dateA), parseISO(dateB));
-                return (nodeA?.id || '').localeCompare(nodeB?.id || '');
-            });
-        }
-    });
-
-    // 3. Add to Dagre
+    // Add nodes to dagre
     nodes.forEach((node) => {
         g.setNode(node.id, { width: nodeWidth, height: maxNodeHeight });
     });
 
-    // Add edges respecting sort
-    const addedEdges = new Set<string>();
-    nodes.forEach((parent) => {
-        const children = childrenMap.get(parent.id) || [];
-        children.forEach((childId) => {
-            g.setEdge(parent.id, childId);
-            addedEdges.add(`${parent.id}-${childId}`);
-        });
-    });
-    edges.forEach((e) => {
-        if (!addedEdges.has(`${e.source}-${e.target}`)) {
-            g.setEdge(e.source, e.target);
-        }
+    // Add edges to dagre
+    edges.forEach((edge) => {
+        g.setEdge(edge.source, edge.target);
     });
 
-    // 4. Run Dagre Layout
+    // Run layout
     dagre.layout(g);
 
-    // 5. Post-Processing: Center Parents over Children
-    // This fixes the visual alignment issue where parents aren't perfectly centered
-    const positionMap = new Map<string, { x: number; y: number }>();
-
-    // First pass: Get all Dagre positions
-    nodes.forEach((node) => {
-        const p = g.node(node.id);
-        if (p) {
-            positionMap.set(node.id, { x: p.x, y: p.y });
-        }
-    });
-
-    // Second pass: Adjust parents X centered to children
-    // Process by generation descending (deepest first) to propagate centering upwards?
-    // Dagre usually sets children fine. We just need to snap parents.
-    // Let's sort nodes by generation index descending
-    const sortedNodesByGen = [...nodes].sort((a, b) => {
-        const genA = (a.data?.generationIndex as number) || 0;
-        const genB = (b.data?.generationIndex as number) || 0;
-        return genB - genA;
-    });
-
-    sortedNodesByGen.forEach((parent) => {
-        const children = childrenMap.get(parent.id) || [];
-        if (children.length > 0) {
-            // Find min and max X of children
-            let minX = Infinity;
-            let maxX = -Infinity;
-            children.forEach((childId) => {
-                const pos = positionMap.get(childId);
-                if (pos) {
-                    minX = Math.min(minX, pos.x);
-                    maxX = Math.max(maxX, pos.x);
-                }
-            });
-
-            if (minX !== Infinity && maxX !== -Infinity) {
-                const newCenterX = (minX + maxX) / 2;
-                const currentPos = positionMap.get(parent.id);
-                if (currentPos) {
-                    // Update map
-                    positionMap.set(parent.id, {
-                        ...currentPos,
-                        x: newCenterX,
-                    });
-                }
-            }
-        }
-    });
-
-    // 6. Apply Final Positions
+    // Apply positions
     const layoutedNodes = nodes.map((node) => {
-        const pos = positionMap.get(node.id);
+        const nodeWithPosition = g.node(node.id);
 
-        if (!pos) return node;
+        // Handle case where node might not be in graph (unlikely if passed correctly)
+        if (!nodeWithPosition) return node;
 
         return {
             ...node,
             position: {
-                x: pos.x - nodeWidth / 2, // Convert Center to Top-Left
-                y: pos.y - maxNodeHeight / 2,
+                x: nodeWithPosition.x - nodeWidth / 2,
+                // Align top edge based on the fixed max height used in layout
+                y: nodeWithPosition.y - maxNodeHeight / 2,
             },
         };
     });
@@ -287,6 +198,7 @@ function GenealogyGraph() {
     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
     const [loading, setLoading] = useState(true);
     const [centeredInitial, setCenteredInitial] = useState(false);
+    const [focusTarget, setFocusTarget] = useState<string | null>(null);
 
     // Raw data store
     const [rawNodes, setRawNodes] = useState<any[]>([]);
@@ -435,6 +347,7 @@ function GenealogyGraph() {
             ...prev,
             [nodeId]: isExpanded,
         }));
+        setFocusTarget(nodeId);
     }, []);
 
     // Re-calculate graph when expansion state or raw data changes
@@ -484,6 +397,8 @@ function GenealogyGraph() {
         const flowNodes: Node[] = filteredCouples.map((c) => ({
             id: c.id,
             type: 'couple',
+            draggable: false,
+            connectable: false,
             data: {
                 primary: c.primary,
                 spouse: c.spouse,
@@ -527,6 +442,19 @@ function GenealogyGraph() {
                 setCenteredInitial(true);
             }
         }
+
+        // Handle explicit focus (e.g., on expand/collapse)
+        if (focusTarget && layoutNodes.length > 0) {
+            const targetNode = layoutNodes.find((n) => n.id === focusTarget);
+            if (targetNode) {
+                setTimeout(() => {
+                    const centerX = targetNode.position.x + nodeWidth / 2;
+                    const centerY = targetNode.position.y + nodeHeight / 2;
+                    setCenter(centerX, centerY, { zoom: 1, duration: 800 });
+                }, 100);
+                setFocusTarget(null);
+            }
+        }
     }, [
         rawNodes,
         rawEdges,
@@ -536,6 +464,7 @@ function GenealogyGraph() {
         setNodes,
         setEdges,
         centeredInitial,
+        focusTarget,
         setCenter,
     ]);
 
