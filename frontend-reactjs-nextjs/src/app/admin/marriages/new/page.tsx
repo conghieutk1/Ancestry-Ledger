@@ -154,8 +154,6 @@ export default function NewMarriagePage() {
                                 <Select name="status" defaultValue="MARRIED">
                                     <option value="MARRIED">Đã kết hôn</option>
                                     <option value="DIVORCED">Ly hôn</option>
-                                    <option value="SEPARATED">Ly thân</option>
-                                    <option value="WIDOWED">Góa</option>
                                 </Select>
                             </div>
                         </div>

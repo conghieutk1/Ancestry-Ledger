@@ -135,7 +135,8 @@ export default function MemberProfilePage({
                                         Branch
                                     </p>
                                     <p className="mt-1 text-sm text-slate-900">
-                                        {member.branch?.name || 'Unknown'}
+                                        {member.branch?.description ||
+                                            'Unknown'}
                                     </p>
                                 </div>
                             </div>

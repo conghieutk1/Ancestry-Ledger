@@ -36,7 +36,7 @@ export class CreateMarriageDto {
   })
   @IsEnum(MarriageStatus)
   @IsOptional()
-  status?: MarriageStatus = MarriageStatus.MARRIED;
+  status?: MarriageStatus;
 
   @ApiPropertyOptional()
   @IsString()

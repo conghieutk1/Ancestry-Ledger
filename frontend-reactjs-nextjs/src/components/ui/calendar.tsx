@@ -48,13 +48,14 @@ function Calendar({
                 ),
                 day_range_end: 'day-range-end',
                 day_selected:
-                    'bg-slate-900 text-white hover:bg-slate-900 hover:text-white focus:bg-slate-900 focus:text-white rounded-full',
-                // make today neutral so it doesn't compete with selected
-                day_today: 'text-slate-600 dark:text-slate-400',
-                day_outside: 'text-slate-400 opacity-50',
-                day_disabled: 'text-slate-400 opacity-40',
+                    'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground rounded-full',
+                // make today standout more but allow selection to override
+                day_today:
+                    'bg-accent text-accent-foreground font-bold aria-selected:bg-primary aria-selected:text-primary-foreground',
+                day_outside: 'text-muted-foreground opacity-50',
+                day_disabled: 'text-muted-foreground opacity-50',
                 day_range_middle:
-                    'aria-selected:bg-slate-100 aria-selected:text-slate-900',
+                    'aria-selected:bg-accent aria-selected:text-accent-foreground',
                 day_hidden: 'invisible',
             }}
             components={{

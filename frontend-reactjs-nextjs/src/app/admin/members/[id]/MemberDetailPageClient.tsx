@@ -57,6 +57,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [member, setMember] = useState<Member | null>(null);
+    const [originalMember, setOriginalMember] = useState<Member | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
@@ -87,11 +88,12 @@ export function MemberDetailPageClient({ id }: { id: string }) {
 
     const [fatherId, setFatherId] = useState('');
     const [motherId, setMotherId] = useState('');
+    const [initialFatherId, setInitialFatherId] = useState(''); // To track parent changes
+    const [initialMotherId, setInitialMotherId] = useState(''); // To track parent changes
     const [allMembers, setAllMembers] = useState<Member[]>([]);
     const [children, setChildren] = useState<Member[]>([]);
     const [branches, setBranches] = useState<FamilyBranch[]>([]);
 
-    // Edit Marriage Modal State
     // Edit Marriage Modal State
     const [showEditMarriageModal, setShowEditMarriageModal] = useState(false);
     const [editMarriageId, setEditMarriageId] = useState('');
@@ -112,8 +114,11 @@ export function MemberDetailPageClient({ id }: { id: string }) {
         try {
             const data = await getMember(id);
             setMember(data);
+            setOriginalMember(JSON.parse(JSON.stringify(data))); // Deep copy for safety
             setFatherId(data.father?.id || '');
             setMotherId(data.mother?.id || '');
+            setInitialFatherId(data.father?.id || '');
+            setInitialMotherId(data.mother?.id || '');
 
             // Fetch children separately
             const childrenData = await getMemberChildren(id);
@@ -142,6 +147,25 @@ export function MemberDetailPageClient({ id }: { id: string }) {
         } catch (err) {
             console.error(err);
         }
+    };
+
+    const hasChanged = (key: keyof Member) => {
+        if (!member || !originalMember) return false;
+        let cur = member[key];
+        let orig = originalMember[key];
+
+        // Normalize null/undefined/empty string
+        if (cur === null || cur === undefined) cur = '';
+        if (orig === null || orig === undefined) orig = '';
+
+        // Handle Branch object comparison specifically
+        if (key === 'branch') {
+            const curId = (member.branch as FamilyBranch)?.id || '';
+            const origId = (originalMember.branch as FamilyBranch)?.id || '';
+            return curId !== origId;
+        }
+
+        return cur != orig;
     };
 
     useEffect(() => {
@@ -189,7 +213,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
         const targetGender =
             member.gender === Gender.MALE ? Gender.FEMALE : Gender.MALE;
         const filtered = membersList.filter(
-            (m) => m.id !== member.id && m.gender === targetGender
+            (m) => m.id !== member.id && m.gender === targetGender,
         );
         setPotentialSpouses(filtered);
     };
@@ -352,10 +376,9 @@ export function MemberDetailPageClient({ id }: { id: string }) {
     const handleDivorce = async () => {
         if (!member) return;
 
-        // Find current active spouse
         const activeMarriage =
-            member.marriagesAsPartner1?.find((m) => !m.endDate) ||
-            member.marriagesAsPartner2?.find((m) => !m.endDate);
+            member.marriagesAsPartner1?.find((m) => m.status !== 'DIVORCED') ||
+            member.marriagesAsPartner2?.find((m) => m.status !== 'DIVORCED');
 
         if (!activeMarriage) {
             toast.error('No active marriage found to divorce.');
@@ -397,50 +420,8 @@ export function MemberDetailPageClient({ id }: { id: string }) {
     };
 
     const handleWidow = async () => {
-        if (!member) return;
-
-        // Find current active spouse
-        const activeMarriage =
-            member.marriagesAsPartner1?.find((m) => !m.endDate) ||
-            member.marriagesAsPartner2?.find((m) => !m.endDate);
-
-        if (!activeMarriage) {
-            toast.error('No active marriage found.');
-            return;
-        }
-
-        const spouseId =
-            activeMarriage.partner1.id === member.id
-                ? activeMarriage.partner2.id
-                : activeMarriage.partner1.id;
-
-        setProcessingWidow(true);
-        try {
-            await createMarriage({
-                partner1Id: member.id,
-                partner2Id: spouseId,
-                status: 'WIDOWED',
-                startDate: widowDate
-                    ? new Date(widowDate).toISOString()
-                    : new Date().toISOString(),
-            });
-
-            toast.success(t.messages.marriageUpdateSuccess, {
-                className: 'bg-emerald-500 text-white border-emerald-600',
-            });
-            setShowWidowDialog(false);
-            setWidowDate('');
-            fetchMember();
-        } catch (err: any) {
-            console.error(err);
-            const msg =
-                err.response?.data?.message || t.messages.marriageUpdateError;
-            toast.error(msg, {
-                className: 'bg-red-500 text-white border-red-600',
-            });
-        } finally {
-            setProcessingWidow(false);
-        }
+        // Deprecated per user request. WIDOWED status removed.
+        return;
     };
     const handleUpdateMarriageLogs = async () => {
         if (!editMarriageId) return;
@@ -448,14 +429,22 @@ export function MemberDetailPageClient({ id }: { id: string }) {
         try {
             const payload: any = {};
             if (editField === 'START') {
+                // Updating Marriage Date
                 payload.startDate = editStartDate
                     ? new Date(editStartDate).toISOString()
-                    : undefined; // Or null if clearing is supported
+                    : undefined;
             } else if (editField === 'END') {
+                // Updating Divorce/Widow Date (End Date)
                 payload.endDate = editEndDate
                     ? new Date(editEndDate).toISOString()
                     : null;
             }
+
+            // IMPORTANT: We do NOT send 'status' here, so the backend should preserve the existing status.
+            // The issue reported "automatically switching to married" suggests the backend might be defaulting status
+            // if not provided, OR the frontend was weirdly causing it.
+            // In the backend update method I reviewed, it only updates status if provided.
+            // So this payload is correct. It only sends startDate OR endDate.
 
             await updateMarriage(editMarriageId, payload);
 
@@ -485,8 +474,6 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                 return t.common.married;
             case 'DIVORCED':
                 return t.common.divorced;
-            case 'WIDOWED':
-                return t.common.widowed;
             default:
                 return status;
         }
@@ -503,18 +490,19 @@ export function MemberDetailPageClient({ id }: { id: string }) {
     ].sort(
         (a, b) =>
             new Date(b.startDate || 0).getTime() -
-            new Date(a.startDate || 0).getTime()
+            new Date(a.startDate || 0).getTime(),
     );
 
-    // Find the latest record that doesn't have an endDate
-    const activeMarriage = marriages.find((m) => !m.endDate);
+    // Find the latest record that doesn't have an endDate or is explicitly MARRIED
+    // Find the latest record that is not DIVORCED
+    const activeMarriage = marriages.find((m) => m.status !== 'DIVORCED');
     const currentStatus = activeMarriage ? activeMarriage.status : 'SINGLE';
 
     // Check if member has children - if yes, disable changing parents
     const hasChildren = children.length > 0;
 
     const filteredSpouses = potentialSpouses.filter((p) =>
-        p.fullName.toLowerCase().includes(searchTerm.toLowerCase())
+        p.fullName.toLowerCase().includes(searchTerm.toLowerCase()),
     );
 
     return (
@@ -559,7 +547,22 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                             </label>
                             <Input
                                 name="lastName"
-                                defaultValue={member.lastName}
+                                value={member.lastName || ''}
+                                onChange={(e) =>
+                                    setMember((prev) =>
+                                        prev
+                                            ? {
+                                                  ...prev,
+                                                  lastName: e.target.value,
+                                              }
+                                            : null,
+                                    )
+                                }
+                                className={cn(
+                                    'focus-visible:ring-0 focus-visible:ring-offset-0',
+                                    hasChanged('lastName') &&
+                                        'border-amber-500 bg-amber-50 dark:bg-amber-950/20',
+                                )}
                                 placeholder="Đặng"
                             />
                         </div>
@@ -569,7 +572,22 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                             </label>
                             <Input
                                 name="middleName"
-                                defaultValue={member.middleName || ''}
+                                value={member.middleName || ''}
+                                onChange={(e) =>
+                                    setMember((prev) =>
+                                        prev
+                                            ? {
+                                                  ...prev,
+                                                  middleName: e.target.value,
+                                              }
+                                            : null,
+                                    )
+                                }
+                                className={cn(
+                                    'focus-visible:ring-0 focus-visible:ring-offset-0',
+                                    hasChanged('middleName') &&
+                                        'border-amber-500 bg-amber-50 dark:bg-amber-950/20',
+                                )}
                                 placeholder="Hữu"
                             />
                         </div>
@@ -580,7 +598,22 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                             </label>
                             <Input
                                 name="firstName"
-                                defaultValue={member.firstName}
+                                value={member.firstName || ''}
+                                onChange={(e) =>
+                                    setMember((prev) =>
+                                        prev
+                                            ? {
+                                                  ...prev,
+                                                  firstName: e.target.value,
+                                              }
+                                            : null,
+                                    )
+                                }
+                                className={cn(
+                                    'focus-visible:ring-0 focus-visible:ring-offset-0',
+                                    hasChanged('firstName') &&
+                                        'border-amber-500 bg-amber-50 dark:bg-amber-950/20',
+                                )}
                                 required
                             />
                         </div>
@@ -590,6 +623,11 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                 {t.common.gender}
                             </label>
                             <CustomSelect
+                                className={cn(
+                                    'focus-visible:ring-0 focus-visible:ring-offset-0',
+                                    hasChanged('gender') &&
+                                        'border-amber-500 rounded-md bg-amber-50 dark:bg-amber-950/20',
+                                )}
                                 value={member.gender}
                                 onChange={(value) => {
                                     setMember((prev) => {
@@ -625,6 +663,11 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                 <span className="text-destructive">*</span>
                             </label>
                             <CustomDatePicker
+                                className={cn(
+                                    'focus-visible:ring-0 focus-visible:ring-offset-0',
+                                    hasChanged('dateOfBirth') &&
+                                        'border-amber-500 rounded-md bg-amber-50 dark:bg-amber-950/20',
+                                )}
                                 value={
                                     member.dateOfBirth
                                         ? member.dateOfBirth.split('T')[0]
@@ -650,7 +693,22 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                             </label>
                             <Input
                                 name="placeOfBirth"
-                                defaultValue={member.placeOfBirth || ''}
+                                value={member.placeOfBirth || ''}
+                                onChange={(e) =>
+                                    setMember((prev) =>
+                                        prev
+                                            ? {
+                                                  ...prev,
+                                                  placeOfBirth: e.target.value,
+                                              }
+                                            : null,
+                                    )
+                                }
+                                className={cn(
+                                    'focus-visible:ring-0 focus-visible:ring-offset-0',
+                                    hasChanged('placeOfBirth') &&
+                                        'border-amber-500 bg-amber-50 dark:bg-amber-950/20',
+                                )}
                             />
                         </div>
 
@@ -660,7 +718,22 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                             </label>
                             <Input
                                 name="occupation"
-                                defaultValue={member.occupation || ''}
+                                value={member.occupation || ''}
+                                onChange={(e) =>
+                                    setMember((prev) =>
+                                        prev
+                                            ? {
+                                                  ...prev,
+                                                  occupation: e.target.value,
+                                              }
+                                            : null,
+                                    )
+                                }
+                                className={cn(
+                                    'focus-visible:ring-0 focus-visible:ring-offset-0',
+                                    hasChanged('occupation') &&
+                                        'border-amber-500 bg-amber-50 dark:bg-amber-950/20',
+                                )}
                             />
                         </div>
                         <div className="md:col-span-2 space-y-3">
@@ -677,11 +750,16 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                                   ...prev,
                                                   phoneNumber: e.target.value,
                                               }
-                                            : prev
+                                            : prev,
                                     );
                                 }}
                                 placeholder=""
                                 disabled={!member.isAlive}
+                                className={cn(
+                                    'focus-visible:ring-0 focus-visible:ring-offset-0',
+                                    hasChanged('phoneNumber') &&
+                                        'border-amber-500 bg-amber-50 dark:bg-amber-950/20',
+                                )}
                             />
                         </div>
                         <div className="md:col-span-2 space-y-3">
@@ -690,7 +768,22 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                             </label>
                             <Input
                                 name="avatarUrl"
-                                defaultValue={member.avatarUrl || ''}
+                                value={member.avatarUrl || ''}
+                                onChange={(e) =>
+                                    setMember((prev) =>
+                                        prev
+                                            ? {
+                                                  ...prev,
+                                                  avatarUrl: e.target.value,
+                                              }
+                                            : null,
+                                    )
+                                }
+                                className={cn(
+                                    'focus-visible:ring-0 focus-visible:ring-offset-0',
+                                    hasChanged('avatarUrl') &&
+                                        'border-amber-500 bg-amber-50 dark:bg-amber-950/20',
+                                )}
                                 placeholder="https://example.com/avatar.jpg"
                             />
                         </div>
@@ -699,6 +792,11 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                 {t.common.status}
                             </label>
                             <CustomSelect
+                                className={cn(
+                                    'focus-visible:ring-0 focus-visible:ring-offset-0',
+                                    hasChanged('isAlive') &&
+                                        'border-amber-500 rounded-md bg-amber-50 dark:bg-amber-950/20',
+                                )}
                                 value={member.isAlive ? 'alive' : 'deceased'}
                                 onChange={(value) => {
                                     setMember((prev) => {
@@ -735,10 +833,15 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                         {t.common.dateOfDeath}
                                     </label>
                                     <CustomDatePicker
+                                        className={cn(
+                                            'focus-visible:ring-0 focus-visible:ring-offset-0',
+                                            hasChanged('dateOfDeath') &&
+                                                'border-amber-500 rounded-md bg-amber-50 dark:bg-amber-950/20',
+                                        )}
                                         value={
                                             member.dateOfDeath
                                                 ? member.dateOfDeath.split(
-                                                      'T'
+                                                      'T',
                                                   )[0]
                                                 : ''
                                         }
@@ -762,7 +865,23 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                     </label>
                                     <Input
                                         name="placeOfDeath"
-                                        defaultValue={member.placeOfDeath || ''}
+                                        value={member.placeOfDeath || ''}
+                                        onChange={(e) =>
+                                            setMember((prev) =>
+                                                prev
+                                                    ? {
+                                                          ...prev,
+                                                          placeOfDeath:
+                                                              e.target.value,
+                                                      }
+                                                    : null,
+                                            )
+                                        }
+                                        className={cn(
+                                            'focus-visible:ring-0 focus-visible:ring-offset-0',
+                                            hasChanged('placeOfDeath') &&
+                                                'border-amber-500 bg-amber-50 dark:bg-amber-950/20',
+                                        )}
                                     />
                                 </div>
                             </>
@@ -795,12 +914,17 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                 {t.common.father}
                             </label>
                             <CustomSelect
+                                className={cn(
+                                    'focus-visible:ring-0 focus-visible:ring-offset-0',
+                                    fatherId !== initialFatherId &&
+                                        'border-amber-500 rounded-md bg-amber-50 dark:bg-amber-950/20',
+                                )}
                                 value={fatherId}
                                 onChange={(newFatherId) => {
                                     setFatherId(newFatherId);
                                     if (newFatherId) {
                                         const father = allMembers.find(
-                                            (m) => m.id === newFatherId
+                                            (m) => m.id === newFatherId,
                                         );
                                         if (father) {
                                             // Auto-update Branch and Generation
@@ -820,24 +944,31 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                             });
 
                                             // Auto-select mother if father is married
-                                            const activeMarriage =
-                                                father.marriagesAsPartner1?.find(
-                                                    (m) => !m.endDate
-                                                ) ||
-                                                father.marriagesAsPartner2?.find(
-                                                    (m) => !m.endDate
-                                                );
-
-                                            if (activeMarriage) {
-                                                const spouseId =
-                                                    activeMarriage.partner1
-                                                        .id === father.id
-                                                        ? activeMarriage
-                                                              .partner2.id
-                                                        : activeMarriage
-                                                              .partner1.id;
-                                                setMotherId(spouseId);
+                                            // Auto-select mother if father has spouse
+                                            let spouseId = father.spouse?.id;
+                                            if (!spouseId) {
+                                                const activeMarriage =
+                                                    father.marriagesAsPartner1?.find(
+                                                        (m) =>
+                                                            m.status !==
+                                                            'DIVORCED',
+                                                    ) ||
+                                                    father.marriagesAsPartner2?.find(
+                                                        (m) =>
+                                                            m.status !==
+                                                            'DIVORCED',
+                                                    );
+                                                if (activeMarriage) {
+                                                    spouseId =
+                                                        activeMarriage.partner1
+                                                            .id === father.id
+                                                            ? activeMarriage
+                                                                  .partner2.id
+                                                            : activeMarriage
+                                                                  .partner1.id;
+                                                }
                                             }
+                                            if (spouseId) setMotherId(spouseId);
                                         }
                                     }
                                 }}
@@ -850,6 +981,13 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                         )
                                             return false;
 
+                                        // Must have been married at least once
+                                        // Must have been married at least once (MARRIED or DIVORCED)
+                                        const isValidStatus =
+                                            m.marriageStatus === 'MARRIED' ||
+                                            m.marriageStatus === 'DIVORCED';
+                                        if (!isValidStatus) return false;
+
                                         // Filter by age: Parent must be older
                                         if (
                                             !member.dateOfBirth ||
@@ -858,10 +996,10 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                             return true;
 
                                         const memberYear = new Date(
-                                            member.dateOfBirth
+                                            member.dateOfBirth,
                                         ).getFullYear();
                                         const parentYear = new Date(
-                                            m.dateOfBirth
+                                            m.dateOfBirth,
                                         ).getFullYear();
 
                                         return parentYear < memberYear;
@@ -871,7 +1009,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                         label: `${m.fullName} • ${
                                             m.dateOfBirth
                                                 ? new Date(
-                                                      m.dateOfBirth
+                                                      m.dateOfBirth,
                                                   ).getFullYear()
                                                 : '?'
                                         }`,
@@ -886,12 +1024,17 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                 {t.common.mother}
                             </label>
                             <CustomSelect
+                                className={cn(
+                                    'focus-visible:ring-0 focus-visible:ring-offset-0',
+                                    motherId !== initialMotherId &&
+                                        'border-amber-500 rounded-md bg-amber-50 dark:bg-amber-950/20',
+                                )}
                                 value={motherId}
                                 onChange={(newMotherId) => {
                                     setMotherId(newMotherId);
                                     if (newMotherId) {
                                         const mother = allMembers.find(
-                                            (m) => m.id === newMotherId
+                                            (m) => m.id === newMotherId,
                                         );
                                         if (mother) {
                                             // Auto-update Branch and Generation
@@ -911,24 +1054,31 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                             });
 
                                             // Auto-select father if mother is married
-                                            const activeMarriage =
-                                                mother.marriagesAsPartner1?.find(
-                                                    (m) => !m.endDate
-                                                ) ||
-                                                mother.marriagesAsPartner2?.find(
-                                                    (m) => !m.endDate
-                                                );
-
-                                            if (activeMarriage) {
-                                                const spouseId =
-                                                    activeMarriage.partner1
-                                                        .id === mother.id
-                                                        ? activeMarriage
-                                                              .partner2.id
-                                                        : activeMarriage
-                                                              .partner1.id;
-                                                setFatherId(spouseId);
+                                            // Auto-select father if mother has spouse
+                                            let spouseId = mother.spouse?.id;
+                                            if (!spouseId) {
+                                                const activeMarriage =
+                                                    mother.marriagesAsPartner1?.find(
+                                                        (m) =>
+                                                            m.status !==
+                                                            'DIVORCED',
+                                                    ) ||
+                                                    mother.marriagesAsPartner2?.find(
+                                                        (m) =>
+                                                            m.status !==
+                                                            'DIVORCED',
+                                                    );
+                                                if (activeMarriage) {
+                                                    spouseId =
+                                                        activeMarriage.partner1
+                                                            .id === mother.id
+                                                            ? activeMarriage
+                                                                  .partner2.id
+                                                            : activeMarriage
+                                                                  .partner1.id;
+                                                }
                                             }
+                                            if (spouseId) setFatherId(spouseId);
                                         }
                                     }
                                 }}
@@ -941,6 +1091,13 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                         )
                                             return false;
 
+                                        // Must have been married at least once
+                                        // Must have been married at least once (MARRIED or DIVORCED)
+                                        const isValidStatus =
+                                            m.marriageStatus === 'MARRIED' ||
+                                            m.marriageStatus === 'DIVORCED';
+                                        if (!isValidStatus) return false;
+
                                         // Filter by age: Parent must be older
                                         if (
                                             !member.dateOfBirth ||
@@ -949,10 +1106,10 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                             return true;
 
                                         const memberYear = new Date(
-                                            member.dateOfBirth
+                                            member.dateOfBirth,
                                         ).getFullYear();
                                         const parentYear = new Date(
-                                            m.dateOfBirth
+                                            m.dateOfBirth,
                                         ).getFullYear();
 
                                         return parentYear < memberYear;
@@ -962,7 +1119,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                         label: `${m.fullName} • ${
                                             m.dateOfBirth
                                                 ? new Date(
-                                                      m.dateOfBirth
+                                                      m.dateOfBirth,
                                                   ).getFullYear()
                                                 : '?'
                                         }`,
@@ -992,21 +1149,21 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                 onChange={() => {
                                     toast.info(
                                         t.members.useMaritalStatusCard ||
-                                            'Please use the Marital Status section below to manage spouses.'
+                                            'Please use the Marital Status section below to manage spouses.',
                                     );
                                 }}
                                 options={allMembers
                                     .filter(
                                         (m) =>
                                             m.id !== member.id &&
-                                            m.gender !== member.gender
+                                            m.gender !== member.gender,
                                     )
                                     .map((m) => ({
                                         value: m.id,
                                         label: `${m.fullName} • ${
                                             m.dateOfBirth
                                                 ? new Date(
-                                                      m.dateOfBirth
+                                                      m.dateOfBirth,
                                                   ).getFullYear()
                                                 : '?'
                                         }`,
@@ -1025,7 +1182,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                 value={member.branch?.id || ''}
                                 onChange={(value) => {
                                     const selectedBranch = branches.find(
-                                        (b) => b.id === value
+                                        (b) => b.id === value,
                                     );
                                     setMember((prev) => {
                                         if (!prev) return prev;
@@ -1039,7 +1196,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                     value: b.id,
                                     label: t.common.branchNumber.replace(
                                         '{number}',
-                                        b.branchOrder?.toString() || '?'
+                                        b.branchOrder?.toString() || '?',
                                     ),
                                 }))}
                                 placeholder={t.common.autoSelect}
@@ -1072,7 +1229,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                 }}
                                 options={Array.from(
                                     { length: 50 },
-                                    (_, i) => i + 1
+                                    (_, i) => i + 1,
                                 ).map((gen) => ({
                                     value: gen.toString(),
                                     label: `${t.common.generationPrefix} ${gen}`,
@@ -1089,6 +1246,11 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                 {t.common.visibility}
                             </label>
                             <CustomSelect
+                                className={cn(
+                                    'focus-visible:ring-0 focus-visible:ring-offset-0',
+                                    hasChanged('visibility') &&
+                                        'border-amber-500 rounded-md bg-amber-50 dark:bg-amber-950/20',
+                                )}
                                 value={member.visibility}
                                 onChange={(value) => {
                                     setMember((prev) => {
@@ -1135,8 +1297,20 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                             </label>
                             <Textarea
                                 name="bio"
-                                defaultValue={member.bio || ''}
+                                value={member.bio || ''}
+                                onChange={(e) =>
+                                    setMember((prev) =>
+                                        prev
+                                            ? { ...prev, bio: e.target.value }
+                                            : null,
+                                    )
+                                }
                                 rows={4}
+                                className={cn(
+                                    'focus-visible:ring-0 focus-visible:ring-offset-0',
+                                    hasChanged('bio') &&
+                                        'border-amber-500 bg-amber-50 dark:bg-amber-950/20',
+                                )}
                             />
                         </div>
                         <div className="md:col-span-6 space-y-3">
@@ -1145,8 +1319,20 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                             </label>
                             <Textarea
                                 name="notes"
-                                defaultValue={member.notes || ''}
+                                value={member.notes || ''}
+                                onChange={(e) =>
+                                    setMember((prev) =>
+                                        prev
+                                            ? { ...prev, notes: e.target.value }
+                                            : null,
+                                    )
+                                }
                                 rows={3}
+                                className={cn(
+                                    'focus-visible:ring-0 focus-visible:ring-offset-0',
+                                    hasChanged('notes') &&
+                                        'border-amber-500 bg-amber-50 dark:bg-amber-950/20',
+                                )}
                             />
                         </div>
                     </CardContent>
@@ -1230,10 +1416,6 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                                     value: 'DIVORCED',
                                                     label: t.common.divorced,
                                                 },
-                                                {
-                                                    value: 'WIDOWED',
-                                                    label: t.common.widowed,
-                                                },
                                             ]}
                                             placeholder={t.common.status}
                                             showSearch={false}
@@ -1266,11 +1448,11 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                                                             4,
                                                                         left: rect.left,
                                                                         width: rect.width,
-                                                                    }
+                                                                    },
                                                                 );
                                                             }
                                                             setComboboxOpen(
-                                                                !comboboxOpen
+                                                                !comboboxOpen,
                                                             );
                                                         }}
                                                     >
@@ -1278,7 +1460,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                                             ? potentialSpouses.find(
                                                                   (p) =>
                                                                       p.id ===
-                                                                      selectedSpouseId
+                                                                      selectedSpouseId,
                                                               )?.fullName
                                                             : t.common
                                                                   .selectOption}
@@ -1294,7 +1476,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                                                     }}
                                                                     onClick={() =>
                                                                         setComboboxOpen(
-                                                                            false
+                                                                            false,
                                                                         )
                                                                     }
                                                                 />
@@ -1318,7 +1500,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                                                                 '...'
                                                                             }
                                                                             onClick={(
-                                                                                e
+                                                                                e,
                                                                             ) =>
                                                                                 e.stopPropagation()
                                                                             }
@@ -1326,12 +1508,12 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                                                                 searchTerm
                                                                             }
                                                                             onChange={(
-                                                                                e
+                                                                                e,
                                                                             ) =>
                                                                                 setSearchTerm(
                                                                                     e
                                                                                         .target
-                                                                                        .value
+                                                                                        .value,
                                                                                 )
                                                                             }
                                                                         />
@@ -1349,7 +1531,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                                                         ) : (
                                                                             filteredSpouses.map(
                                                                                 (
-                                                                                    p
+                                                                                    p,
                                                                                 ) => (
                                                                                     <div
                                                                                         key={
@@ -1362,10 +1544,10 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                                                                             'relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground',
                                                                                             selectedSpouseId ===
                                                                                                 p.id &&
-                                                                                                'bg-accent text-accent-foreground'
+                                                                                                'bg-accent text-accent-foreground',
                                                                                         )}
                                                                                         onClick={(
-                                                                                            e
+                                                                                            e,
                                                                                         ) => {
                                                                                             e.stopPropagation();
                                                                                             e.preventDefault();
@@ -1373,10 +1555,10 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                                                                                 p.id ===
                                                                                                     selectedSpouseId
                                                                                                     ? ''
-                                                                                                    : p.id
+                                                                                                    : p.id,
                                                                                             );
                                                                                             setComboboxOpen(
-                                                                                                false
+                                                                                                false,
                                                                                             );
                                                                                         }}
                                                                                     >
@@ -1386,7 +1568,7 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                                                                                 selectedSpouseId ===
                                                                                                     p.id
                                                                                                     ? 'opacity-100'
-                                                                                                    : 'opacity-0'
+                                                                                                    : 'opacity-0',
                                                                                             )}
                                                                                         />
                                                                                         <div className="flex flex-col">
@@ -1398,19 +1580,19 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                                                                             <span className="text-xs text-muted-foreground">
                                                                                                 {p.dateOfBirth
                                                                                                     ? new Date(
-                                                                                                          p.dateOfBirth
+                                                                                                          p.dateOfBirth,
                                                                                                       ).getFullYear()
                                                                                                     : '?'}
                                                                                             </span>
                                                                                         </div>
                                                                                     </div>
-                                                                                )
+                                                                                ),
                                                                             )
                                                                         )}
                                                                     </div>
                                                                 </div>
                                                             </>,
-                                                            document.body
+                                                            document.body,
                                                         )}
                                                 </div>
                                             </div>
@@ -1473,8 +1655,6 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                     SINGLE: 'bg-muted text-muted-foreground border-border',
                                     DIVORCED:
                                         'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800',
-                                    WIDOWED:
-                                        'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800',
                                 };
                                 const spouse =
                                     m.partner1?.id === member.id
@@ -1517,17 +1697,17 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                                         'px-2 py-0.5 text-xs font-medium rounded-md border',
                                                         statusColors[
                                                             m.status as keyof typeof statusColors
-                                                        ] || statusColors.SINGLE
+                                                        ] ||
+                                                            statusColors.SINGLE,
                                                     )}
                                                 >
                                                     {getStatusLabel(m.status)}
                                                 </span>
                                             </div>
                                             <div className="flex flex-col gap-1">
-                                                {/* If Married, show Marriage Date using startDate */}
-                                                {m.status === 'MARRIED' && (
-                                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                        <span className="w-20">
+                                                <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="w-24 font-medium">
                                                             {
                                                                 t.members
                                                                     .marriageDate
@@ -1537,94 +1717,86 @@ export function MemberDetailPageClient({ id }: { id: string }) {
                                                         <span>
                                                             {m.startDate
                                                                 ? new Date(
-                                                                      m.startDate
+                                                                      m.startDate,
                                                                   ).toLocaleDateString(
                                                                       locale ===
                                                                           'vi'
                                                                           ? 'vi-VN'
-                                                                          : 'en-US'
+                                                                          : 'en-US',
                                                                   )
                                                                 : '?'}
                                                         </span>
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
-                                                            className="h-6 w-6"
+                                                            className="h-5 w-5 ml-1 text-muted-foreground hover:text-primary"
                                                             onClick={() => {
                                                                 setEditMarriageId(
-                                                                    m.id
+                                                                    m.id,
                                                                 );
                                                                 setEditStartDate(
                                                                     m.startDate ||
-                                                                        ''
+                                                                        '',
                                                                 );
                                                                 setEditField(
-                                                                    'START'
+                                                                    'START',
                                                                 );
                                                                 setShowEditMarriageModal(
-                                                                    true
+                                                                    true,
                                                                 );
                                                             }}
                                                         >
                                                             <Edit className="h-3 w-3" />
                                                         </Button>
                                                     </div>
-                                                )}
 
-                                                {/* If Divorced/Widowed, display startDate as the event date per user request */}
-                                                {(m.status === 'DIVORCED' ||
-                                                    m.status === 'WIDOWED') && (
-                                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                        <span className="w-20">
-                                                            {m.status ===
-                                                            'DIVORCED'
-                                                                ? (
-                                                                      t.members as any
-                                                                  )
-                                                                      .divorceDate ||
-                                                                  'Divorce Date'
-                                                                : (
-                                                                      t.members as any
-                                                                  ).deathDate ||
-                                                                  'Date of Death'}
-                                                            :
-                                                        </span>
-                                                        <span>
-                                                            {m.startDate
-                                                                ? new Date(
-                                                                      m.startDate
-                                                                  ).toLocaleDateString(
-                                                                      locale ===
-                                                                          'vi'
-                                                                          ? 'vi-VN'
-                                                                          : 'en-US'
-                                                                  )
-                                                                : '?'}
-                                                        </span>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-6 w-6"
-                                                            onClick={() => {
-                                                                setEditMarriageId(
-                                                                    m.id
-                                                                );
-                                                                setEditStartDate(
-                                                                    m.startDate ||
-                                                                        ''
-                                                                );
-                                                                setEditField(
-                                                                    'START'
-                                                                );
-                                                                setShowEditMarriageModal(
-                                                                    true
-                                                                );
-                                                            }}
-                                                        >
-                                                            <Edit className="h-3 w-3" />
-                                                        </Button>
-                                                    </div>
-                                                )}
+                                                    {m.status ===
+                                                        'DIVORCED' && (
+                                                        <div className="flex items-center gap-2 text-destructive/80">
+                                                            <span className="w-24 font-medium">
+                                                                {
+                                                                    t.common
+                                                                        .divorced
+                                                                }
+                                                                : :
+                                                            </span>
+                                                            <span>
+                                                                {m.endDate
+                                                                    ? new Date(
+                                                                          m.endDate,
+                                                                      ).toLocaleDateString(
+                                                                          locale ===
+                                                                              'vi'
+                                                                              ? 'vi-VN'
+                                                                              : 'en-US',
+                                                                      )
+                                                                    : '?'}
+                                                            </span>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-5 w-5 ml-1 text-muted-foreground hover:text-primary"
+                                                                onClick={() => {
+                                                                    setEditMarriageId(
+                                                                        m.id,
+                                                                    );
+                                                                    setEditEndDate(
+                                                                        m.endDate ||
+                                                                            '',
+                                                                    );
+                                                                    setEditField(
+                                                                        'END',
+                                                                    );
+                                                                    setShowEditMarriageModal(
+                                                                        true,
+                                                                    );
+                                                                }}
+                                                            >
+                                                                <Edit className="h-3 w-3" />
+                                                            </Button>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
 

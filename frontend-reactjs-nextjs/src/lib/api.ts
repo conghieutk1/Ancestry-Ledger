@@ -24,7 +24,7 @@ api.interceptors.request.use(
     },
     (error) => {
         return Promise.reject(error);
-    }
+    },
 );
 
 // Add a response interceptor to handle 401 errors (expired token)
@@ -49,7 +49,7 @@ api.interceptors.response.use(
                             headers: {
                                 Authorization: `Bearer ${refreshToken}`,
                             },
-                        }
+                        },
                     );
 
                     const { access_token, refresh_token } = response.data;
@@ -59,13 +59,11 @@ api.interceptors.response.use(
                     }
 
                     // Update header for future requests
-                    api.defaults.headers.common[
-                        'Authorization'
-                    ] = `Bearer ${access_token}`;
+                    api.defaults.headers.common['Authorization'] =
+                        `Bearer ${access_token}`;
                     // Update header for this request
-                    originalRequest.headers[
-                        'Authorization'
-                    ] = `Bearer ${access_token}`;
+                    originalRequest.headers['Authorization'] =
+                        `Bearer ${access_token}`;
 
                     return api(originalRequest);
                 } catch (refreshError) {
@@ -78,7 +76,7 @@ api.interceptors.response.use(
             }
         }
         return Promise.reject(error);
-    }
+    },
 );
 
 // Logout function
@@ -112,14 +110,14 @@ export const login = async (credentials: any) => {
     try {
         const response = await api.post<LoginResponse>(
             '/auth/login',
-            credentials
+            credentials,
         );
         if (response.data.access_token) {
             localStorage.setItem('token', response.data.access_token);
             if (response.data.refresh_token) {
                 localStorage.setItem(
                     'refresh_token',
-                    response.data.refresh_token
+                    response.data.refresh_token,
                 );
             }
             localStorage.setItem('user', JSON.stringify(response.data.user));
@@ -167,12 +165,12 @@ export const getMemberChildren = async (id: string): Promise<Member[]> => {
                         page,
                         take: pageSize,
                     },
-                }
+                },
             );
 
             const members = response.data.data;
             const childrenInPage = members.filter(
-                (m) => m.father?.id === id || m.mother?.id === id
+                (m) => m.father?.id === id || m.mother?.id === id,
             );
             allChildren = [...allChildren, ...childrenInPage];
 
@@ -224,7 +222,7 @@ export const createBranch = async (data: Partial<FamilyBranch>) => {
 export const updateBranch = async (id: string, data: Partial<FamilyBranch>) => {
     const response = await api.patch<FamilyBranch>(
         `/family-branches/${id}`,
-        data
+        data,
     );
     return response.data;
 };
@@ -246,7 +244,7 @@ export const getUser = async (id: string) => {
 };
 
 export const createUser = async (
-    data: Partial<User> & { password: string }
+    data: Partial<User> & { password: string },
 ) => {
     const response = await api.post<User>('/auth/register', data);
     return response.data;
@@ -303,5 +301,13 @@ export const updateMarriage = async (id: string, data: any) => {
 
 export const deleteMarriage = async (id: string) => {
     const response = await api.delete(`/marriages/${id}`);
+    return response.data;
+};
+
+// Genealogy
+export const getGenealogyTree = async () => {
+    const response = await api.get<{ nodes: any[]; edges: any[] }>(
+        '/members/tree',
+    );
     return response.data;
 };

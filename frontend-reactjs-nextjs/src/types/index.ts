@@ -32,7 +32,7 @@ export interface Marriage {
     partner2: Member;
     startDate?: string;
     endDate?: string;
-    status: 'MARRIED' | 'DIVORCED' | 'SEPARATED' | 'WIDOWED';
+    status: 'MARRIED' | 'DIVORCED' | 'SINGLE';
     notes?: string;
 }
 
@@ -63,7 +63,7 @@ export interface Member {
     marriagesAsPartner1?: Marriage[];
     marriagesAsPartner2?: Marriage[];
     spouse?: Member;
-    marriageStatus?: 'MARRIED' | 'DIVORCED' | 'SEPARATED' | 'WIDOWED';
+    marriageStatus?: 'MARRIED' | 'DIVORCED' | 'SINGLE';
     generation?: string;
     branchDisplay?: string;
     birthYear?: number;

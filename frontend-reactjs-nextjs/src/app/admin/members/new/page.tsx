@@ -41,7 +41,7 @@ export default function NewMemberPage() {
     const [branchId, setBranchId] = useState('');
     const [generationIndex, setGenerationIndex] = useState<number | null>(null);
     const [visibility, setVisibility] = useState<Visibility>(
-        Visibility.MEMBERS_ONLY
+        Visibility.MEMBERS_ONLY,
     );
     const formRef = useRef<HTMLFormElement>(null);
 
@@ -205,12 +205,12 @@ export default function NewMemberPage() {
                     toast.error(
                         t.messages.validationAgeNewMember.replace(
                             '{minAge}',
-                            minAge.toString()
+                            minAge.toString(),
                         ),
                         {
                             className:
                                 'bg-destructive text-destructive-foreground border-destructive',
-                        }
+                        },
                     );
                     setLoading(false);
                     return;
@@ -227,12 +227,12 @@ export default function NewMemberPage() {
                         toast.error(
                             t.messages.validationAgeSpouse.replace(
                                 '{minAge}',
-                                spouseMinAge.toString()
+                                spouseMinAge.toString(),
                             ),
                             {
                                 className:
                                     'bg-destructive text-destructive-foreground border-destructive',
-                            }
+                            },
                         );
                         setLoading(false);
                         return;
@@ -357,20 +357,32 @@ export default function NewMemberPage() {
                                 {t.form.lastName}{' '}
                                 <span className="text-destructive">*</span>
                             </label>
-                            <Input name="lastName" placeholder="Đặng" />
+                            <Input
+                                name="lastName"
+                                placeholder="Đặng"
+                                className="focus-visible:ring-0 focus-visible:ring-offset-0"
+                            />
                         </div>
                         <div className="md:col-span-2 space-y-3">
                             <label className="text-sm font-medium text-foreground">
                                 {t.form.middleName}
                             </label>
-                            <Input name="middleName" placeholder="Hữu" />
+                            <Input
+                                name="middleName"
+                                placeholder="Hữu"
+                                className="focus-visible:ring-0 focus-visible:ring-offset-0"
+                            />
                         </div>
                         <div className="md:col-span-2 space-y-3">
                             <label className="text-sm font-medium text-foreground">
                                 {t.form.firstName}{' '}
                                 <span className="text-destructive">*</span>
                             </label>
-                            <Input name="firstName" placeholder="" />
+                            <Input
+                                name="firstName"
+                                placeholder=""
+                                className="focus-visible:ring-0 focus-visible:ring-offset-0"
+                            />
                         </div>
 
                         <div className="md:col-span-2 space-y-3">
@@ -379,6 +391,7 @@ export default function NewMemberPage() {
                                 <span className="text-destructive">*</span>
                             </label>
                             <CustomSelect
+                                className="focus-visible:ring-0 focus-visible:ring-offset-0"
                                 value={gender}
                                 onChange={(value) => {
                                     setGender(value as Gender);
@@ -412,6 +425,7 @@ export default function NewMemberPage() {
                                 <span className="text-destructive">*</span>
                             </label>
                             <CustomDatePicker
+                                className="focus-visible:ring-0 focus-visible:ring-offset-0"
                                 value={dateOfBirth}
                                 onChange={setDateOfBirth}
                                 placeholder={t.common.dateOfBirth}
@@ -422,21 +436,33 @@ export default function NewMemberPage() {
                             <label className="text-sm font-medium text-foreground">
                                 {t.common.placeOfBirth}
                             </label>
-                            <Input name="placeOfBirth" placeholder="" />
+                            <Input
+                                name="placeOfBirth"
+                                placeholder=""
+                                className="focus-visible:ring-0 focus-visible:ring-offset-0"
+                            />
                         </div>
 
                         <div className="md:col-span-2 space-y-3">
                             <label className="text-sm font-medium text-foreground">
                                 {t.common.occupation}
                             </label>
-                            <Input name="occupation" placeholder="" />
+                            <Input
+                                name="occupation"
+                                placeholder=""
+                                className="focus-visible:ring-0 focus-visible:ring-offset-0"
+                            />
                         </div>
 
                         <div className="md:col-span-2 space-y-3">
                             <label className="text-sm font-medium text-foreground">
                                 {t.common.phoneNumber}
                             </label>
-                            <Input name="phoneNumber" placeholder="" />
+                            <Input
+                                name="phoneNumber"
+                                placeholder=""
+                                className="focus-visible:ring-0 focus-visible:ring-offset-0"
+                            />
                         </div>
 
                         <div className="md:col-span-2 space-y-3">
@@ -446,6 +472,7 @@ export default function NewMemberPage() {
                             <Input
                                 name="avatarUrl"
                                 placeholder="https://example.com/avatar.jpg"
+                                className="focus-visible:ring-0 focus-visible:ring-offset-0"
                             />
                         </div>
 
@@ -455,6 +482,7 @@ export default function NewMemberPage() {
                                 <span className="text-destructive">*</span>
                             </label>
                             <CustomSelect
+                                className="focus-visible:ring-0 focus-visible:ring-offset-0"
                                 value={isAlive ? 'alive' : 'deceased'}
                                 onChange={(value) =>
                                     setIsAlive(value === 'alive')
@@ -481,6 +509,7 @@ export default function NewMemberPage() {
                                         {t.common.dateOfDeath}
                                     </label>
                                     <CustomDatePicker
+                                        className="focus-visible:ring-0 focus-visible:ring-offset-0"
                                         value={dateOfDeath}
                                         onChange={setDateOfDeath}
                                         placeholder={t.common.dateOfDeath}
@@ -490,7 +519,11 @@ export default function NewMemberPage() {
                                     <label className="text-sm font-medium text-foreground">
                                         {t.common.placeOfDeath}
                                     </label>
-                                    <Input name="placeOfDeath" placeholder="" />
+                                    <Input
+                                        name="placeOfDeath"
+                                        placeholder=""
+                                        className="focus-visible:ring-0 focus-visible:ring-offset-0"
+                                    />
                                 </div>
                             </>
                         )}
@@ -538,83 +571,86 @@ export default function NewMemberPage() {
                                                 {t.common.father}
                                             </label>
                                             <CustomSelect
+                                                className="focus-visible:ring-0 focus-visible:ring-offset-0"
                                                 value={fatherId}
                                                 onChange={(val) => {
                                                     setFatherId(val);
-                                                    // If parent selected, ensure spouse is cleared (though it should be hidden, this is safety)
                                                     if (val) {
                                                         setSpouseId('');
-                                                        // Auto-map Mother and Branch
                                                         const father =
                                                             members.find(
                                                                 (m) =>
-                                                                    m.id === val
+                                                                    m.id ===
+                                                                    val,
                                                             );
                                                         if (father) {
                                                             setBranchId(
                                                                 father.branch
-                                                                    ?.id || ''
+                                                                    ?.id || '',
                                                             );
-                                                            // Auto-fill generation (child = parent + 1)
                                                             if (
                                                                 father.generationIndex
                                                             ) {
                                                                 setGenerationIndex(
                                                                     father.generationIndex +
-                                                                        1
+                                                                        1,
                                                                 );
                                                             } else {
                                                                 setGenerationIndex(
-                                                                    null
+                                                                    null,
                                                                 );
                                                             }
 
-                                                            const marriage =
-                                                                father.marriagesAsPartner1?.find(
-                                                                    (m) =>
-                                                                        m.status ===
-                                                                        'MARRIED'
-                                                                ) ||
-                                                                father.marriagesAsPartner2?.find(
-                                                                    (m) =>
-                                                                        m.status ===
-                                                                        'MARRIED'
-                                                                );
-                                                            if (marriage) {
-                                                                const spouseId =
-                                                                    marriage
-                                                                        .partner1
-                                                                        .id ===
-                                                                    father.id
-                                                                        ? marriage
-                                                                              .partner2
-                                                                              .id
-                                                                        : marriage
-                                                                              .partner1
-                                                                              .id;
-                                                                if (spouseId)
-                                                                    setMotherId(
-                                                                        spouseId
+                                                            // Auto-fill mother from confirmed spouse or active marriage
+                                                            let spouseId =
+                                                                father.spouse
+                                                                    ?.id;
+                                                            if (!spouseId) {
+                                                                // Fallback to active marriage search using robust logic
+                                                                const marriage =
+                                                                    father.marriagesAsPartner1?.find(
+                                                                        (m) =>
+                                                                            m.status !==
+                                                                            'DIVORCED',
+                                                                    ) ||
+                                                                    father.marriagesAsPartner2?.find(
+                                                                        (m) =>
+                                                                            m.status !==
+                                                                            'DIVORCED',
                                                                     );
+
+                                                                if (marriage) {
+                                                                    spouseId =
+                                                                        marriage
+                                                                            .partner1
+                                                                            .id ===
+                                                                        father.id
+                                                                            ? marriage
+                                                                                  .partner2
+                                                                                  .id
+                                                                            : marriage
+                                                                                  .partner1
+                                                                                  .id;
+                                                                }
                                                             }
+
+                                                            if (spouseId)
+                                                                setMotherId(
+                                                                    spouseId,
+                                                                );
                                                         }
                                                     }
                                                 }}
+                                                // Allow Father to be MARRIED or DIVORCED
                                                 options={members
                                                     .filter(
                                                         (m) =>
                                                             m.gender ===
                                                                 Gender.MALE &&
-                                                            (m.marriagesAsPartner1?.some(
-                                                                (mar) =>
-                                                                    mar.status ===
-                                                                    'MARRIED'
-                                                            ) ||
-                                                                m.marriagesAsPartner2?.some(
-                                                                    (mar) =>
-                                                                        mar.status ===
-                                                                        'MARRIED'
-                                                                ))
+                                                            (m.marriageStatus ===
+                                                                'MARRIED' ||
+                                                                m.marriageStatus ===
+                                                                    'DIVORCED'),
                                                     )
                                                     .map((m) => ({
                                                         value: m.id,
@@ -623,7 +659,7 @@ export default function NewMemberPage() {
                                                         } • ${
                                                             m.dateOfBirth
                                                                 ? new Date(
-                                                                      m.dateOfBirth
+                                                                      m.dateOfBirth,
                                                                   ).getFullYear()
                                                                 : '?'
                                                         }`,
@@ -642,116 +678,113 @@ export default function NewMemberPage() {
                                                 {t.common.mother}
                                             </label>
                                             <CustomSelect
+                                                className="focus-visible:ring-0 focus-visible:ring-offset-0"
                                                 value={motherId}
                                                 onChange={(val) => {
                                                     setMotherId(val);
-                                                    // If parent selected, ensure spouse is cleared
                                                     if (val) {
                                                         setSpouseId('');
-                                                        // Auto-map Father and Branch
                                                         const mother =
                                                             members.find(
                                                                 (m) =>
-                                                                    m.id === val
+                                                                    m.id ===
+                                                                    val,
                                                             );
                                                         if (mother) {
                                                             let inferredBranchId =
                                                                 mother.branch
                                                                     ?.id || '';
-
-                                                            // Auto-fill generation (child = parent + 1)
                                                             if (
                                                                 mother.generationIndex
                                                             ) {
                                                                 setGenerationIndex(
                                                                     mother.generationIndex +
-                                                                        1
+                                                                        1,
                                                                 );
                                                             } else {
                                                                 setGenerationIndex(
-                                                                    null
+                                                                    null,
                                                                 );
                                                             }
 
-                                                            const marriage =
-                                                                mother.marriagesAsPartner1?.find(
-                                                                    (m) =>
-                                                                        m.status ===
-                                                                        'MARRIED'
-                                                                ) ||
-                                                                mother.marriagesAsPartner2?.find(
-                                                                    (m) =>
-                                                                        m.status ===
-                                                                        'MARRIED'
-                                                                );
-                                                            if (marriage) {
-                                                                const spouseId =
-                                                                    marriage
-                                                                        .partner1
-                                                                        .id ===
-                                                                    mother.id
-                                                                        ? marriage
-                                                                              .partner2
-                                                                              .id
-                                                                        : marriage
-                                                                              .partner1
-                                                                              .id;
-                                                                if (spouseId) {
-                                                                    setFatherId(
-                                                                        spouseId
+                                                            // Auto-fill father from spouse or active marriage
+                                                            let spouseId =
+                                                                mother.spouse
+                                                                    ?.id;
+                                                            if (!spouseId) {
+                                                                const marriage =
+                                                                    mother.marriagesAsPartner1?.find(
+                                                                        (m) =>
+                                                                            m.status !==
+                                                                            'DIVORCED',
+                                                                    ) ||
+                                                                    mother.marriagesAsPartner2?.find(
+                                                                        (m) =>
+                                                                            m.status !==
+                                                                            'DIVORCED',
                                                                     );
-                                                                    // If father found, prefer father's branch
-                                                                    const father =
-                                                                        members.find(
-                                                                            (
-                                                                                m
-                                                                            ) =>
-                                                                                m.id ===
-                                                                                spouseId
-                                                                        );
-                                                                    if (
-                                                                        father &&
+                                                                if (marriage) {
+                                                                    spouseId =
+                                                                        marriage
+                                                                            .partner1
+                                                                            .id ===
+                                                                        mother.id
+                                                                            ? marriage
+                                                                                  .partner2
+                                                                                  .id
+                                                                            : marriage
+                                                                                  .partner1
+                                                                                  .id;
+                                                                }
+                                                            }
+
+                                                            if (spouseId) {
+                                                                setFatherId(
+                                                                    spouseId,
+                                                                );
+                                                                // Iterate to find father object to get branch
+                                                                const father =
+                                                                    members.find(
+                                                                        (m) =>
+                                                                            m.id ===
+                                                                            spouseId,
+                                                                    );
+                                                                if (
+                                                                    father &&
+                                                                    father
+                                                                        .branch
+                                                                        ?.id
+                                                                ) {
+                                                                    inferredBranchId =
                                                                         father
                                                                             .branch
-                                                                            ?.id
+                                                                            .id;
+                                                                    if (
+                                                                        father.generationIndex
                                                                     ) {
-                                                                        inferredBranchId =
-                                                                            father
-                                                                                .branch
-                                                                                .id;
-                                                                        // Also prefer father's generation if available
-                                                                        if (
-                                                                            father.generationIndex
-                                                                        ) {
-                                                                            setGenerationIndex(
-                                                                                father.generationIndex +
-                                                                                    1
-                                                                            );
-                                                                        }
+                                                                        setGenerationIndex(
+                                                                            father.generationIndex +
+                                                                                1,
+                                                                        );
                                                                     }
                                                                 }
                                                             }
                                                             setBranchId(
-                                                                inferredBranchId
+                                                                inferredBranchId,
                                                             );
                                                         }
                                                     }
                                                 }}
+                                                // Allow Mother to be MARRIED or DIVORCED
                                                 options={members
                                                     .filter(
                                                         (m) =>
                                                             m.gender ===
                                                                 Gender.FEMALE &&
-                                                            (m.marriagesAsPartner1?.some(
-                                                                (mar) =>
-                                                                    mar.status ===
-                                                                    'MARRIED'
-                                                            ) ||
-                                                                m.marriagesAsPartner2?.some(
-                                                                    (mar) =>
-                                                                        mar.status ===
-                                                                        'MARRIED'
-                                                                ))
+                                                            (m.marriageStatus ===
+                                                                'MARRIED' ||
+                                                                m.marriageStatus ===
+                                                                    'DIVORCED'),
                                                     )
                                                     .map((m) => ({
                                                         value: m.id,
@@ -760,7 +793,7 @@ export default function NewMemberPage() {
                                                         } • ${
                                                             m.dateOfBirth
                                                                 ? new Date(
-                                                                      m.dateOfBirth
+                                                                      m.dateOfBirth,
                                                                   ).getFullYear()
                                                                 : '?'
                                                         }`,
@@ -784,6 +817,7 @@ export default function NewMemberPage() {
                                                 {t.common.spouse}
                                             </label>
                                             <CustomSelect
+                                                className="focus-visible:ring-0 focus-visible:ring-offset-0"
                                                 value={spouseId}
                                                 onChange={(val) => {
                                                     setSpouseId(val);
@@ -795,22 +829,23 @@ export default function NewMemberPage() {
                                                         const spouse =
                                                             members.find(
                                                                 (m) =>
-                                                                    m.id === val
+                                                                    m.id ===
+                                                                    val,
                                                             );
                                                         setBranchId(
                                                             spouse?.branch
-                                                                ?.id || ''
+                                                                ?.id || '',
                                                         );
                                                         // Auto-fill generation (same as spouse)
                                                         if (
                                                             spouse?.generationIndex
                                                         ) {
                                                             setGenerationIndex(
-                                                                spouse.generationIndex
+                                                                spouse.generationIndex,
                                                             );
                                                         } else {
                                                             setGenerationIndex(
-                                                                null
+                                                                null,
                                                             );
                                                         }
                                                     }
@@ -843,11 +878,6 @@ export default function NewMemberPage() {
                                                             'DIVORCED'
                                                         ) {
                                                             statusSuffix = ` (${t.common.divorced})`;
-                                                        } else if (
-                                                            m.marriageStatus ===
-                                                            'WIDOWED'
-                                                        ) {
-                                                            statusSuffix = ` (${t.common.widowed})`;
                                                         }
 
                                                         return {
@@ -857,7 +887,7 @@ export default function NewMemberPage() {
                                                             }${statusSuffix} • ${
                                                                 m.dateOfBirth
                                                                     ? new Date(
-                                                                          m.dateOfBirth
+                                                                          m.dateOfBirth,
                                                                       ).getFullYear()
                                                                     : '?'
                                                             }`,
@@ -878,13 +908,15 @@ export default function NewMemberPage() {
                                         {t.common.branch}
                                     </label>
                                     <CustomSelect
+                                        className="focus-visible:ring-0 focus-visible:ring-offset-0"
                                         value={branchId}
                                         onChange={setBranchId}
                                         options={branches.map((b) => ({
                                             value: b.id,
                                             label: t.common.branchNumber.replace(
                                                 '{number}',
-                                                b.branchOrder?.toString() || '?'
+                                                b.branchOrder?.toString() ||
+                                                    '?',
                                             ),
                                         }))}
                                         placeholder={t.common.autoSelect}
@@ -898,6 +930,7 @@ export default function NewMemberPage() {
                                         {t.common.generationIndex}
                                     </label>
                                     <CustomSelect
+                                        className="focus-visible:ring-0 focus-visible:ring-offset-0"
                                         value={
                                             generationIndex
                                                 ? generationIndex.toString()
@@ -905,12 +938,12 @@ export default function NewMemberPage() {
                                         }
                                         onChange={(val) =>
                                             setGenerationIndex(
-                                                val ? parseInt(val) : null
+                                                val ? parseInt(val) : null,
                                             )
                                         }
                                         options={Array.from(
                                             { length: 50 },
-                                            (_, i) => i + 1
+                                            (_, i) => i + 1,
                                         ).map((gen) => ({
                                             value: gen.toString(),
                                             label: `${t.common.generationPrefix} ${gen}`,
@@ -926,6 +959,7 @@ export default function NewMemberPage() {
                                         {t.common.visibility}
                                     </label>
                                     <CustomSelect
+                                        className="focus-visible:ring-0 focus-visible:ring-offset-0"
                                         value={visibility}
                                         onChange={(value) =>
                                             setVisibility(value as Visibility)
@@ -977,14 +1011,24 @@ export default function NewMemberPage() {
                             <label className="text-sm font-medium text-foreground">
                                 {t.common.bio}
                             </label>
-                            <Textarea name="bio" placeholder="" rows={4} />
+                            <Textarea
+                                name="bio"
+                                placeholder=""
+                                rows={4}
+                                className="focus-visible:ring-0 focus-visible:ring-offset-0"
+                            />
                         </div>
 
                         <div className="md:col-span-6 space-y-3">
                             <label className="text-sm font-medium text-foreground">
                                 {t.common.notes}
                             </label>
-                            <Textarea name="notes" placeholder="" rows={3} />
+                            <Textarea
+                                name="notes"
+                                placeholder=""
+                                rows={3}
+                                className="focus-visible:ring-0 focus-visible:ring-offset-0"
+                            />
                         </div>
                     </CardContent>
                 </Card>

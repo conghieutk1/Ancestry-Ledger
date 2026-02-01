@@ -146,7 +146,7 @@ export const CustomDatePicker = React.forwardRef<
         };
 
         return (
-            <div ref={ref} className={cn('relative', className)}>
+            <div ref={ref} className={cn('relative')}>
                 {/* Hidden input for form submission */}
                 <input type="hidden" name={name} value={displayValue} />
 
@@ -158,10 +158,8 @@ export const CustomDatePicker = React.forwardRef<
                             disabled={disabled}
                             className={cn(
                                 'w-full justify-start text-left font-normal',
-                                !date && 'text-muted-foreground'
-                                // Remove any width classes from className to avoid conflicts if needed,
-                                // but usually className overrides.
-                                // We keep className at the end.
+                                !date && 'text-muted-foreground',
+                                className
                             )}
                         >
                             <CalendarIcon className="mr-2 h-4 w-4" />

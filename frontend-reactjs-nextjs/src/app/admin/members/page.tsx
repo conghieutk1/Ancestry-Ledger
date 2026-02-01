@@ -209,7 +209,7 @@ export default function MembersPage() {
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
                             placeholder={t.common.search + '...'}
-                            className="pl-9"
+                            className="pl-9 focus-visible:ring-0 focus-visible:ring-offset-0"
                             value={search}
                             onChange={(e) => {
                                 setSearch(e.target.value);
@@ -218,93 +218,105 @@ export default function MembersPage() {
                         />
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
-                        <CustomSelect
-                            value={selectedBranch}
-                            onChange={(value) => {
-                                setSelectedBranch(value);
-                                setPage(1);
-                            }}
-                            options={[
-                                {
-                                    value: '',
-                                    label: t.members.filters.allBranches,
-                                },
-                                ...branches.map((branch) => ({
-                                    value: branch.id,
-                                    label: t.common.branchNumber.replace(
-                                        '{number}',
-                                        branch.branchOrder?.toString() || '?'
-                                    ),
-                                })),
-                            ]}
-                            placeholder={t.members.filters.allBranches}
-                            searchPlaceholder={t.common.search}
-                            className="w-[200px]"
-                        />
-                        <CustomSelect
-                            value={selectedGender}
-                            onChange={(value) => {
-                                setSelectedGender(value);
-                                setPage(1);
-                            }}
-                            options={[
-                                {
-                                    value: '',
-                                    label: t.members.filters.allGenders,
-                                },
-                                { value: 'MALE', label: t.common.male },
-                                { value: 'FEMALE', label: t.common.female },
-                                { value: 'OTHER', label: t.common.other },
-                            ]}
-                            placeholder={t.members.filters.allGenders}
-                            showSearch={false}
-                            className="w-40"
-                        />
-                        <CustomSelect
-                            value={selectedStatus}
-                            onChange={(value) => {
-                                setSelectedStatus(value);
-                                setPage(1);
-                            }}
-                            options={[
-                                {
-                                    value: '',
-                                    label: t.members.filters.allStatuses,
-                                },
-                                { value: 'alive', label: t.common.alive },
-                                { value: 'deceased', label: t.common.deceased },
-                            ]}
-                            placeholder={t.members.filters.allStatuses}
-                            showSearch={false}
-                            className="w-[180px]"
-                        />
-                        <CustomSelect
-                            value={selectedGeneration}
-                            onChange={(value) => {
-                                setSelectedGeneration(value);
-                                setPage(1);
-                            }}
-                            options={[
-                                {
-                                    value: '',
-                                    label:
-                                        t.common.generationIndex ||
-                                        'Generation',
-                                },
-                                ...Array.from({ length: 20 }, (_, i) => ({
-                                    value: (i + 1).toString(),
-                                    label: `${
-                                        t.common.generationPrefix ||
-                                        'Generation'
-                                    } ${i + 1}`,
-                                })),
-                            ]}
-                            placeholder={
-                                t.common.generationIndex || 'Generation'
-                            }
-                            searchPlaceholder={t.common.search}
-                            className="w-40"
-                        />
+                        <div className="w-[200px]">
+                            <CustomSelect
+                                value={selectedBranch}
+                                onChange={(value) => {
+                                    setSelectedBranch(value);
+                                    setPage(1);
+                                }}
+                                options={[
+                                    {
+                                        value: '',
+                                        label: t.members.filters.allBranches,
+                                    },
+                                    ...branches.map((branch) => ({
+                                        value: branch.id,
+                                        label: t.common.branchNumber.replace(
+                                            '{number}',
+                                            branch.branchOrder?.toString() ||
+                                                '?',
+                                        ),
+                                    })),
+                                ]}
+                                placeholder={t.members.filters.allBranches}
+                                searchPlaceholder={t.common.search}
+                                className="focus-visible:ring-0 focus-visible:ring-offset-0"
+                            />
+                        </div>
+                        <div className="w-40">
+                            <CustomSelect
+                                value={selectedGender}
+                                onChange={(value) => {
+                                    setSelectedGender(value);
+                                    setPage(1);
+                                }}
+                                options={[
+                                    {
+                                        value: '',
+                                        label: t.members.filters.allGenders,
+                                    },
+                                    { value: 'MALE', label: t.common.male },
+                                    { value: 'FEMALE', label: t.common.female },
+                                    { value: 'OTHER', label: t.common.other },
+                                ]}
+                                placeholder={t.members.filters.allGenders}
+                                showSearch={false}
+                                className="focus-visible:ring-0 focus-visible:ring-offset-0"
+                            />
+                        </div>
+                        <div className="w-[180px]">
+                            <CustomSelect
+                                value={selectedStatus}
+                                onChange={(value) => {
+                                    setSelectedStatus(value);
+                                    setPage(1);
+                                }}
+                                options={[
+                                    {
+                                        value: '',
+                                        label: t.members.filters.allStatuses,
+                                    },
+                                    { value: 'alive', label: t.common.alive },
+                                    {
+                                        value: 'deceased',
+                                        label: t.common.deceased,
+                                    },
+                                ]}
+                                placeholder={t.members.filters.allStatuses}
+                                showSearch={false}
+                                className="focus-visible:ring-0 focus-visible:ring-offset-0"
+                            />
+                        </div>
+                        <div className="w-40">
+                            <CustomSelect
+                                value={selectedGeneration}
+                                onChange={(value) => {
+                                    setSelectedGeneration(value);
+                                    setPage(1);
+                                }}
+                                options={[
+                                    {
+                                        value: '',
+                                        label:
+                                            t.common.generationIndex ||
+                                            'Generation',
+                                    },
+                                    ...Array.from({ length: 20 }, (_, i) => ({
+                                        value: (i + 1).toString(),
+                                        label: `${
+                                            t.common.generationPrefix ||
+                                            'Generation'
+                                        } ${i + 1}`,
+                                    })),
+                                ]}
+                                placeholder={
+                                    t.common.generationIndex || 'Generation'
+                                }
+                                searchPlaceholder={t.common.search}
+                                className="focus-visible:ring-0 focus-visible:ring-offset-0"
+                            />
+                        </div>
                         {hasActiveFilters && (
                             <Button
                                 variant="outline"
@@ -328,7 +340,7 @@ export default function MembersPage() {
                                     '{number}',
                                     branches
                                         .find((b) => b.id === selectedBranch)
-                                        ?.branchOrder?.toString() || '?'
+                                        ?.branchOrder?.toString() || '?',
                                 )}
                                 <button
                                     onClick={() => setSelectedBranch('')}
@@ -452,9 +464,6 @@ export default function MembersPage() {
                                     statusLabel = t.common.married;
                                 else if (marriageStatus === 'DIVORCED')
                                     statusLabel = t.common.divorced;
-                                else if (marriageStatus === 'WIDOWED')
-                                    statusLabel = t.common.married;
-                                // User requested to show "Married" even if widowed
                                 else if (spouseName)
                                     statusLabel = t.common.married; // Fallback
 
@@ -468,13 +477,13 @@ export default function MembersPage() {
                                 const branchText = member.branch?.branchOrder
                                     ? t.common.branchNumber.replace(
                                           '{number}',
-                                          member.branch.branchOrder.toString()
+                                          member.branch.branchOrder.toString(),
                                       )
                                     : member.branchDisplay || '-';
 
                                 // Format ngày sinh
                                 const birthDate = formatDate(
-                                    member.dateOfBirth
+                                    member.dateOfBirth,
                                 );
                                 const birthDateDisplay = birthDate || '-';
 
@@ -553,17 +562,12 @@ export default function MembersPage() {
                                                 >
                                                     {statusLabel}
                                                 </span>
-                                                {spouseName &&
-                                                    (!marriageStatus ||
-                                                        marriageStatus ===
-                                                            'MARRIED' ||
-                                                        marriageStatus ===
-                                                            'WIDOWED') && (
-                                                        <span className="font-medium">
-                                                            {' • '}
-                                                            {spouseName}
-                                                        </span>
-                                                    )}
+                                                {spouseName && (
+                                                    <span className="font-medium">
+                                                        {' • '}
+                                                        {spouseName}
+                                                    </span>
+                                                )}
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-sm py-4 text-center">
@@ -571,7 +575,7 @@ export default function MembersPage() {
                                                 <button
                                                     onClick={() =>
                                                         handleChildrenClick(
-                                                            member
+                                                            member,
                                                         )
                                                     }
                                                     className="font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline cursor-pointer"
@@ -638,7 +642,7 @@ export default function MembersPage() {
                                                                         }
                                                                         :{' '}
                                                                         {formatDate(
-                                                                            member.dateOfDeath
+                                                                            member.dateOfDeath,
                                                                         )}
                                                                     </div>
                                                                     <div>
@@ -659,7 +663,7 @@ export default function MembersPage() {
                                                     {member.dateOfDeath && (
                                                         <span className="text-[11px] text-center text-muted-foreground leading-none">
                                                             {getLunarYear(
-                                                                member.dateOfDeath
+                                                                member.dateOfDeath,
                                                             )}
                                                         </span>
                                                     )}
@@ -758,7 +762,7 @@ export default function MembersPage() {
                                             {pageNum}
                                         </Button>
                                     );
-                                }
+                                },
                             )}
                         </div>
 
@@ -879,14 +883,14 @@ export default function MembersPage() {
                                                     className="text-xs"
                                                 >
                                                     {getGenderText(
-                                                        child.gender
+                                                        child.gender,
                                                     )}
                                                 </Badge>
                                                 {child.dateOfBirth && (
                                                     <span className="text-muted-foreground">
                                                         {t.common.dateOfBirth}:{' '}
                                                         {formatDate(
-                                                            child.dateOfBirth
+                                                            child.dateOfBirth,
                                                         )}
                                                     </span>
                                                 )}

@@ -17,11 +17,20 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Role, Roles } from '../../common/decorators/roles.decorator';
 import { PageOptionsDto } from '../../common/dto/page-options.dto';
+import { GenealogyService } from './genealogy.service';
 
 @ApiTags('members')
 @Controller('members')
 export class MemberController {
-  constructor(private readonly memberService: MemberService) {}
+  constructor(
+    private readonly memberService: MemberService,
+    private readonly genealogyService: GenealogyService,
+  ) {}
+
+  @Get('tree')
+  getTree() {
+    return this.genealogyService.getFullTree();
+  }
 
   @Get()
   findAll(@Query() pageOptionsDto: PageOptionsDto) {

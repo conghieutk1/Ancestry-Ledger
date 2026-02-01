@@ -150,7 +150,10 @@ export const CustomSelect = React.forwardRef<HTMLDivElement, CustomSelectProps>(
         return (
             <div
                 ref={ref}
-                className={cn(className, disabled && 'cursor-not-allowed')}
+                className={cn(
+                    'relative w-full',
+                    disabled && 'cursor-not-allowed'
+                )}
             >
                 <Button
                     ref={triggerRef}
@@ -160,7 +163,8 @@ export const CustomSelect = React.forwardRef<HTMLDivElement, CustomSelectProps>(
                     aria-expanded={isOpen}
                     className={cn(
                         'w-full justify-between',
-                        disabled && 'pointer-events-none'
+                        disabled && 'pointer-events-none',
+                        className
                     )}
                     onClick={handleOpen}
                     disabled={disabled}

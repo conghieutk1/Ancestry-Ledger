@@ -144,8 +144,6 @@ export default function MarriagesPage() {
                                                 ? 'Đã kết hôn'
                                                 : marriage.status === 'DIVORCED'
                                                 ? 'Ly hôn'
-                                                : marriage.status === 'WIDOWED'
-                                                ? 'Góa'
                                                 : marriage.status}
                                         </span>
                                     </TableCell>

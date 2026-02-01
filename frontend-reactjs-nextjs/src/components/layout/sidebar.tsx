@@ -48,7 +48,7 @@ export function Sidebar() {
         },
         {
             title: t.sidebar.treeView,
-            href: '/tree',
+            href: '/admin/genealogy',
             icon: Network,
         },
     ];
@@ -71,7 +71,7 @@ export function Sidebar() {
         <div
             className={cn(
                 'flex h-screen flex-col border-r border-sidebar-border bg-sidebar transition-all duration-300',
-                isCollapsed ? 'w-16' : 'w-60'
+                isCollapsed ? 'w-16' : 'w-60',
             )}
         >
             <div className="flex h-14 items-center justify-between border-b border-sidebar-border px-4 gap-2">
@@ -109,7 +109,7 @@ export function Sidebar() {
                                         isCollapsed && 'justify-center px-2',
                                         isActive
                                             ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                                            : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                                            : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
                                     ) as string
                                 }
                                 title={isCollapsed ? item.title : undefined}
@@ -125,7 +125,7 @@ export function Sidebar() {
                 <div
                     className={cn(
                         'flex items-center gap-3',
-                        isCollapsed && 'flex-col'
+                        isCollapsed && 'flex-col',
                     )}
                 >
                     <div className="h-8 w-8 rounded-full bg-sidebar-accent flex items-center justify-center flex-shrink-0 text-sm font-semibold text-sidebar-accent-foreground">
@@ -145,7 +145,7 @@ export function Sidebar() {
                 <button
                     className={cn(
                         'inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors border border-sidebar-border bg-sidebar hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sidebar-foreground/70',
-                        isCollapsed ? 'w-full h-9' : 'w-full'
+                        isCollapsed ? 'w-full h-9' : 'w-full',
                     )}
                     onClick={logout}
                     title={isCollapsed ? t.sidebar.logout : undefined}

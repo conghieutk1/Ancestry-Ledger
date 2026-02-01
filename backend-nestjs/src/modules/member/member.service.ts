@@ -17,6 +17,8 @@ export class MemberService {
     private memberRepository: Repository<Member>,
     @InjectRepository(FamilyBranch)
     private branchRepository: Repository<FamilyBranch>,
+    @InjectRepository(Marriage)
+    private marriageRepository: Repository<Marriage>,
   ) {}
 
   async findAllBranches(): Promise<FamilyBranch[]> {
@@ -75,13 +77,7 @@ export class MemberService {
       .createQueryBuilder('member')
       .leftJoinAndSelect('member.father', 'father')
       .leftJoinAndSelect('member.mother', 'mother')
-      .leftJoinAndSelect('member.branch', 'branch')
-      .leftJoinAndSelect('member.marriagesAsPartner1', 'marriage1')
-      .leftJoinAndSelect('marriage1.partner1', 'partner1_marriage1')
-      .leftJoinAndSelect('marriage1.partner2', 'partner2_marriage1')
-      .leftJoinAndSelect('member.marriagesAsPartner2', 'marriage2')
-      .leftJoinAndSelect('marriage2.partner1', 'partner1_marriage2')
-      .leftJoinAndSelect('marriage2.partner2', 'partner2_marriage2');
+      .leftJoinAndSelect('member.branch', 'branch');
 
     // Build where conditions
     const whereConditions: string[] = [];
@@ -146,48 +142,41 @@ export class MemberService {
           where: [{ father: { id: member.id } }, { mother: { id: member.id } }],
         });
 
-        // Get spouse from marriages - find the latest marriage event
+        // Get spouse from marriages - find the latest ACTIVE marriage (not DIVORCED)
         let spouse = null;
         let marriageStatus = null;
-        const marriages1 = member.marriagesAsPartner1 || [];
-        const marriages2 = member.marriagesAsPartner2 || [];
+        // Use QueryBuilder for robust fetching
+        const allMarriages = await this.marriageRepository
+          .createQueryBuilder('marriage')
+          .leftJoinAndSelect('marriage.partner1', 'partner1')
+          .leftJoinAndSelect('marriage.partner2', 'partner2')
+          .where('partner1.id = :mid OR partner2.id = :mid', { mid: member.id })
+          .orderBy('marriage.startDate', 'DESC')
+          .getMany();
 
-        const allMarriages = [...marriages1, ...marriages2];
+        // Check latest marriage for status
+        if (allMarriages.length > 0) {
+          const latest = allMarriages[0];
 
-        // Sort by startDate desc, then createdAt desc to find the latest marriage
-        allMarriages.sort((a, b) => {
-          const dateA = a.startDate
-            ? new Date(a.startDate).getTime()
-            : new Date(a.createdAt).getTime();
-          const dateB = b.startDate
-            ? new Date(b.startDate).getTime()
-            : new Date(b.createdAt).getTime();
-          return dateB - dateA;
-        });
-
-        const latestMarriage = allMarriages[0];
-
-        if (latestMarriage) {
-          marriageStatus = latestMarriage.status;
-
-          // Determine who is the spouse (the other partner)
-          // We must check IDs safely
-          if (
-            latestMarriage.partner1 &&
-            latestMarriage.partner1.id === member.id
-          ) {
-            spouse = latestMarriage.partner2;
-          } else if (
-            latestMarriage.partner2 &&
-            latestMarriage.partner2.id === member.id
-          ) {
-            spouse = latestMarriage.partner1;
+          if (latest.status === MarriageStatus.DIVORCED) {
+            marriageStatus = MarriageStatus.DIVORCED;
+            // Spouse remains null for divorced
           } else {
-            // Fallback based on which list the marriage came from
-            if (marriages1.includes(latestMarriage)) {
-              spouse = latestMarriage.partner2;
+            // Treat as MARRIED (covers MARRIED, legacy WIDOWED, or SINGLE if record exists)
+            marriageStatus = MarriageStatus.MARRIED;
+
+            // Set spouse
+            if (latest.partner1 && latest.partner1.id !== member.id) {
+              spouse = latest.partner1;
+            } else if (latest.partner2 && latest.partner2.id !== member.id) {
+              spouse = latest.partner2;
             } else {
-              spouse = latestMarriage.partner1;
+              const p1Id = latest.partner1?.id;
+              const p2Id = latest.partner2?.id;
+              if (p1Id === member.id && latest.partner2)
+                spouse = latest.partner2;
+              else if (p2Id === member.id && latest.partner1)
+                spouse = latest.partner1;
             }
           }
         }
@@ -326,26 +315,6 @@ export class MemberService {
     }
 
     const savedMember = await this.memberRepository.save(member);
-
-    // Auto-update spouse to WIDOWED if member dies
-    // We check if they were alive and are now dead (isAlive === false)
-    if (wasAlive && savedMember.isAlive === false) {
-      const activeMarriage = [
-        ...(member.marriagesAsPartner1 || []),
-        ...(member.marriagesAsPartner2 || []),
-      ].find((m) => m.status === MarriageStatus.MARRIED && !m.endDate);
-
-      if (activeMarriage) {
-        activeMarriage.status = MarriageStatus.WIDOWED;
-        // Map widow date to startDate per project convention
-        activeMarriage.startDate = savedMember.dateOfDeath
-          ? new Date(savedMember.dateOfDeath)
-          : new Date();
-        activeMarriage.endDate = null; // Ensure active state for query purposes
-
-        await this.memberRepository.manager.save(Marriage, activeMarriage);
-      }
-    }
 
     return savedMember;
   }

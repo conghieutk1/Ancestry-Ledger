@@ -12,8 +12,6 @@ export enum MarriageStatus {
   SINGLE = 'SINGLE',
   MARRIED = 'MARRIED',
   DIVORCED = 'DIVORCED',
-  SEPARATED = 'SEPARATED',
-  WIDOWED = 'WIDOWED',
 }
 
 @Entity('marriages')

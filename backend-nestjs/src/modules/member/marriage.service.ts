@@ -47,9 +47,11 @@ export class MarriageService {
 
     const relations = [
       'marriagesAsPartner1',
+      'marriagesAsPartner1.partner1',
       'marriagesAsPartner1.partner2',
       'marriagesAsPartner2',
       'marriagesAsPartner2.partner1',
+      'marriagesAsPartner2.partner2',
     ];
 
     const p1 = await this.memberRepository.findOne({
@@ -204,9 +206,16 @@ export class MarriageService {
       }
     }
 
-    const getActiveMarriages = (member: Member) => {
-      // Include WIDOWED so we can close it when remarrying
-      const validStatuses = [MarriageStatus.MARRIED, MarriageStatus.WIDOWED];
+    const getActiveMarriages = (
+      member: Member,
+      includeDivorced: boolean = false,
+    ) => {
+      // Include WIDOWED so we can close it when remarrying - REMOVED per user request
+      const validStatuses = [MarriageStatus.MARRIED];
+      if (includeDivorced) {
+        validStatuses.push(MarriageStatus.DIVORCED);
+      }
+
       const m1 = (member.marriagesAsPartner1 || []).filter(
         (m) => validStatuses.includes(m.status) && !m.endDate,
       );
@@ -229,53 +238,66 @@ export class MarriageService {
 
     if (status === MarriageStatus.DIVORCED) {
       if (finalP2) {
-        const activeMarriages = getActiveMarriages(finalP1);
-        const targetMarriage = activeMarriages.find((m) => {
-          const p1Id = m.partner1?.id;
-          const p2Id = m.partner2?.id;
-          return (
-            (p1Id === finalP1.id && p2Id === finalP2.id) ||
-            (p1Id === finalP2.id && p2Id === finalP1.id)
-          );
-        });
+        // Find the specific marriage record between these two partners
+        // We look for the LATEST record regardless of whether it has an endDate (to allow corrections)
+        const allMarriages = [
+          ...(finalP1.marriagesAsPartner1 || []),
+          ...(finalP1.marriagesAsPartner2 || []),
+        ];
+
+        const targetMarriage = allMarriages
+          .filter(
+            (m) =>
+              (m.partner1?.id === finalP1.id &&
+                m.partner2?.id === finalP2.id) ||
+              (m.partner1?.id === finalP2.id && m.partner2?.id === finalP1.id),
+          )
+          .sort(
+            (a, b) =>
+              new Date(b.startDate || 0).getTime() -
+              new Date(a.startDate || 0).getTime(),
+          )[0];
 
         if (targetMarriage) {
+          // Validate divorce date against marriage date
+          const divorceDate = startDate ? new Date(startDate) : new Date(); // Input date
+          const marriageDate = targetMarriage.startDate
+            ? new Date(targetMarriage.startDate)
+            : null;
+
+          // Validate if marriageDate exists
+          if (marriageDate) {
+            // Reset times to midnight for accurate date-only comparison
+            const dTime = new Date(divorceDate).setHours(0, 0, 0, 0);
+            const mTime = new Date(marriageDate).setHours(0, 0, 0, 0);
+
+            if (dTime <= mTime) {
+              throw new BadRequestException(
+                'Ngày ly hôn phải sau ngày kết hôn (Divorce date must be after marriage date)',
+              );
+            }
+          }
+
           targetMarriage.status = status as MarriageStatus;
-          // Per user request: Divorce date maps to startDate in DB
-          targetMarriage.startDate = startDate
-            ? new Date(startDate)
-            : new Date();
-          targetMarriage.endDate = null; // Clear end date as this is now the "Current" status start date?
+          // CORRECT LOGIC: Divorce Date ends the marriage. Start Date remains the Marriage Date.
+          targetMarriage.endDate = divorceDate;
           if (rest.notes) targetMarriage.notes = rest.notes;
           return this.marriageRepository.save(targetMarriage);
+        } else {
+          // If no marriage record matches
+          throw new BadRequestException(
+            'Cannot divorce: No marriage record found between these partners (Không tìm thấy kết hôn)',
+          );
         }
       }
     }
 
+    /* 
+     REMOVED WIDOWED LOGIC
     if (status === MarriageStatus.WIDOWED) {
-      if (finalP2) {
-        const activeMarriages = getActiveMarriages(finalP1);
-        const targetMarriage = activeMarriages.find((m) => {
-          const p1Id = m.partner1?.id;
-          const p2Id = m.partner2?.id;
-          return (
-            (p1Id === finalP1.id && p2Id === finalP2.id) ||
-            (p1Id === finalP2.id && p2Id === finalP1.id)
-          );
-        });
-
-        if (targetMarriage) {
-          targetMarriage.status = status as MarriageStatus;
-          // Per user request: Widow date maps to startDate in DB
-          targetMarriage.startDate = startDate
-            ? new Date(startDate)
-            : new Date();
-          targetMarriage.endDate = null;
-          if (rest.notes) targetMarriage.notes = rest.notes;
-          return this.marriageRepository.save(targetMarriage);
-        }
-      }
+       ...
     }
+    */
 
     if (status === MarriageStatus.MARRIED) {
       const activeMarriagesP1 = getActiveMarriages(finalP1);
@@ -284,10 +306,12 @@ export class MarriageService {
 
       for (const m of allActive) {
         // If the previous status was WIDOWED, we close it because they are now Remarrying.
+        /* 
         if (m.status === MarriageStatus.WIDOWED) {
           m.endDate = date;
           await this.marriageRepository.save(m);
         }
+        */
         // Note: We do NOT automatically close concurrent MARRIED records here
         // unless specifically required (Polygamy support).
         // If Monogamy is strict, we would close them too.
@@ -336,16 +360,20 @@ export class MarriageService {
       marriage.partner2 = p2;
     }
 
-    if (updateMarriageDto.status) {
+    if (updateMarriageDto.status !== undefined) {
       marriage.status = updateMarriageDto.status as MarriageStatus;
     }
 
-    if (updateMarriageDto.startDate) {
-      marriage.startDate = new Date(updateMarriageDto.startDate);
+    if (updateMarriageDto.startDate !== undefined) {
+      marriage.startDate = updateMarriageDto.startDate
+        ? new Date(updateMarriageDto.startDate)
+        : null;
     }
 
-    if (updateMarriageDto.endDate) {
-      marriage.endDate = new Date(updateMarriageDto.endDate);
+    if (updateMarriageDto.endDate !== undefined) {
+      marriage.endDate = updateMarriageDto.endDate
+        ? new Date(updateMarriageDto.endDate)
+        : null;
     }
 
     if (updateMarriageDto.notes) {

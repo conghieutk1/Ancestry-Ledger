@@ -160,4 +160,81 @@ export class GenealogyService {
         return `Họ hàng (Khoảng cách ${distance})`;
     }
   }
+
+  /**
+   * Get full tree data for visualization
+   */
+  async getFullTree() {
+    // Fetch all members with vital relationships
+    const members = await this.memberRepository.find({
+      relations: [
+        'father',
+        'mother',
+        'marriagesAsPartner1',
+        'marriagesAsPartner1.partner2',
+        'marriagesAsPartner2',
+        'marriagesAsPartner2.partner1',
+      ],
+      select: {
+        id: true,
+        fullName: true,
+        gender: true,
+        dateOfBirth: true,
+        dateOfDeath: true,
+        isAlive: true,
+        avatarUrl: true,
+        generationIndex: true,
+      },
+    });
+
+    const nodes = members.map((m) => ({
+      id: m.id,
+      data: {
+        fullName: m.fullName,
+        gender: m.gender,
+        dateOfBirth: m.dateOfBirth,
+        dateOfDeath: m.dateOfDeath,
+        isAlive: m.isAlive,
+        avatarUrl: m.avatarUrl,
+        generationIndex: m.generationIndex,
+      },
+    }));
+
+    const edges = [];
+    members.forEach((m) => {
+      // Parent Relationships
+      if (m.father) {
+        edges.push({
+          from: m.father.id,
+          to: m.id,
+          type: 'PARENT_OF',
+        });
+      }
+      if (m.mother) {
+        edges.push({
+          from: m.mother.id,
+          to: m.id,
+          type: 'PARENT_OF',
+        });
+      }
+
+      // Marriage Relationships (unique check needed)
+      m.marriagesAsPartner1?.forEach((mar) => {
+        if (mar.partner2) {
+          edges.push({
+            from: m.id,
+            to: mar.partner2.id,
+            type: 'MARRIED_TO',
+            data: {
+              startDate: mar.startDate,
+              endDate: mar.endDate,
+              status: mar.status,
+            },
+          });
+        }
+      });
+    });
+
+    return { nodes, edges };
+  }
 }

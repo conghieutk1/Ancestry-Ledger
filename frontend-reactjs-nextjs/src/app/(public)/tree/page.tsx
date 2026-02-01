@@ -50,7 +50,7 @@ export default function TreePage() {
                 attributes: {
                     Gender: m.gender,
                     Status: m.isAlive ? 'Alive' : 'Deceased',
-                    Branch: m.branch?.name || 'Unknown',
+                    Branch: m.branch?.description || 'Unknown',
                 },
                 children: [],
             });
